@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 """
-stock_screener.py — 动量发现 + 价值验证 选股筛
-用法：
-  python3 stock_screener.py                   # 扫描全部 watchlist
-  python3 stock_screener.py NVDA TSLA GOOG    # 扫描指定标的
-  python3 stock_screener.py --update MU       # 更新 MU 的基本面数据
+stock_screener.py — Momentum discovery + value verification stock screener
+Usage:
+  python3 stock_screener.py                   # Scan the entire watchlist
+  python3 stock_screener.py NVDA TSLA GOOG    # Scan specific tickers
+  python3 stock_screener.py --update MU       # Update MU's fundamental data
 
-框架：
-  第一层（动量发现）：60日新高 + 放量确认 → 进入待选池
-  第二层（价值验证）：6维评分 ≥ 3/6 → 买入信号
-  信号分级：3/6=试探仓3% | 4/6=标准仓5% | 5-6/6=确信仓8%
+Framework:
+  Layer 1 (momentum discovery): 60-day high + volume confirmation → enter candidate pool
+  Layer 2 (value verification): 6-dimension score ≥ 3/6 → buy signal
+  Signal tiers: 3/6 = probe position 3% | 4/6 = standard position 5% | 5-6/6 = conviction position 8%
 
-改进点（来自NVDA/AMD/MU回测）：
-  1. 毛利率连续2季改善 → 独立买入条件（解决NVDA 2023-01漏判）
-  2. EPS超预期>30% → 周期股独立条件（解决MU底部信号）
-  3. 信号分级替代二元判断
+Improvements (from NVDA/AMD/MU backtests):
+  1. Gross margin improving for 2 consecutive quarters → standalone buy condition (fixes NVDA 2023-01 miss)
+  2. EPS beat > 30% → standalone condition for cyclical stocks (fixes MU bottom signal)
+  3. Signal tiers replace binary judgment
 """
 
 import json
@@ -25,7 +25,7 @@ from datetime import datetime, timedelta
 from collections import OrderedDict
 
 # ============================================================
-# 配置
+# Configuration
 # ============================================================
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
@@ -38,15 +38,15 @@ DEFAULT_WATCHLIST = {
     "us_ai_infra": ["ETN", "PWR", "VRT", "CRWV"],
     "us_crypto": ["COIN", "HOOD", "MSTR", "CRCL"],
     "hk_internet": ["0700.HK", "9888.HK", "1024.HK", "9992.HK"],
-    "a_share": [],  # A股需要不同数据源，后续扩展
+    "a_share": [],  # A-shares need a different data source, to be added later
 }
 
 # ============================================================
-# 价格数据获取（通过curl绕过Python SSL问题）
+# Price-data fetching (uses curl to bypass Python SSL issues)
 # ============================================================
 
 def fetch_prices_curl(ticker, days=120):
-    """用curl获取Yahoo Finance日线数据"""
+    """Fetch daily bars from Yahoo Finance using curl"""
     end_ts = int(datetime.now().timestamp())
     start_ts = int((datetime.now() - timedelta(days=days)).timestamp())
     url = (
@@ -78,11 +78,11 @@ def fetch_prices_curl(ticker, days=120):
 
 
 # ============================================================
-# 基本面数据管理
+# Fundamental-data management
 # ============================================================
 
 def load_fundamentals():
-    """加载基本面数据"""
+    """Load fundamental data"""
     if os.path.exists(FUND_FILE):
         with open(FUND_FILE) as f:
             return json.load(f)
@@ -96,52 +96,52 @@ def save_fundamentals(data):
 
 
 def update_fundamental_interactive(ticker):
-    """交互式更新基本面数据"""
+    """Interactively update fundamental data"""
     funds = load_fundamentals()
     if ticker not in funds:
         funds[ticker] = {"quarters": {}}
-    print(f"\n  更新 {ticker} 基本面数据")
-    print(f"  已有季度：{', '.join(funds[ticker]['quarters'].keys()) or '无'}")
-    date = input("  财报发布日 (YYYY-MM-DD): ").strip()
-    label = input("  标签 (如 Q1 2024): ").strip()
-    rev_yoy = float(input("  营收同比增速 (%): "))
-    gm = float(input("  毛利率 (%): "))
-    eps_beat = float(input("  EPS超预期 (%): "))
+    print(f"\n  Updating {ticker} fundamental data")
+    print(f"  Existing quarters: {', '.join(funds[ticker]['quarters'].keys()) or 'none'}")
+    date = input("  Earnings release date (YYYY-MM-DD): ").strip()
+    label = input("  Label (e.g. Q1 2024): ").strip()
+    rev_yoy = float(input("  Revenue YoY growth (%): "))
+    gm = float(input("  Gross margin (%): "))
+    eps_beat = float(input("  EPS beat (%): "))
 
     funds[ticker]["quarters"][date] = {
         "label": label, "rev_yoy": rev_yoy, "gm": gm, "eps_beat": eps_beat
     }
     save_fundamentals(funds)
-    print(f"  ✅ 已保存 {ticker} {label}")
+    print(f"  ✅ Saved {ticker} {label}")
 
 
 # ============================================================
-# 第一层：动量发现
+# Layer 1: Momentum discovery
 # ============================================================
 
 def check_momentum(prices):
-    """检查最近交易日是否触发动量信号"""
+    """Check whether the most recent trading day triggers a momentum signal"""
     if len(prices) < 61:
         return None
 
     latest = prices[-1]
     close = latest["close"]
 
-    # 60日新高
+    # 60-day high
     past_60_highs = [p["high"] for p in prices[-61:-1]]
     is_60d_high = close > max(past_60_highs)
 
-    # 放量：近5日均量 > 20日均量 × 1.5
+    # Volume surge: 5-day avg volume > 20-day avg volume × 1.5
     vol_5 = sum(p["volume"] for p in prices[-5:]) / 5
     vol_20 = sum(p["volume"] for p in prices[-20:]) / 20
     vol_ratio = vol_5 / vol_20 if vol_20 > 0 else 0
     is_volume = vol_ratio > 1.5
 
-    # 30日涨幅
+    # 30-day gain
     close_30d = prices[-31]["close"] if len(prices) > 30 else prices[0]["close"]
     pct_30d = (close - close_30d) / close_30d * 100
 
-    # 近5日有突破日（不一定是今天）
+    # A breakout day within the last 5 days (not necessarily today)
     recent_breakout = False
     for i in range(-5, 0):
         if prices[i]["close"] > max(p["high"] for p in prices[i-60:i]):
@@ -161,11 +161,11 @@ def check_momentum(prices):
 
 
 # ============================================================
-# 第二层：价值验证（6维，含回测改进）
+# Layer 2: Value verification (6 dimensions, with backtest improvements)
 # ============================================================
 
 def check_value(ticker, signal_date=None):
-    """6维价值验证"""
+    """6-dimension value verification"""
     funds = load_fundamentals()
     if ticker not in funds or not funds[ticker].get("quarters"):
         return None
@@ -173,7 +173,7 @@ def check_value(ticker, signal_date=None):
     quarters = funds[ticker]["quarters"]
     sorted_q = sorted(quarters.items(), key=lambda x: x[0])
 
-    # 找最近两个季度
+    # Find the two most recent quarters
     if signal_date:
         valid = [(d, q) for d, q in sorted_q if d <= signal_date]
     else:
@@ -192,50 +192,50 @@ def check_value(ticker, signal_date=None):
 
     checks = {}
 
-    # 1. 营收加速（同比增速在改善）
+    # 1. Revenue acceleration (YoY growth improving)
     if pd:
-        checks["营收加速"] = d["rev_yoy"] > pd["rev_yoy"]
+        checks["Revenue accel"] = d["rev_yoy"] > pd["rev_yoy"]
     else:
-        checks["营收加速"] = d["rev_yoy"] > 20
+        checks["Revenue accel"] = d["rev_yoy"] > 20
 
-    # 2. 毛利率方向
+    # 2. Gross margin direction
     if pd:
-        checks["毛利率扩张"] = d["gm"] > pd["gm"] or d["gm"] > 55
+        checks["GM expansion"] = d["gm"] > pd["gm"] or d["gm"] > 55
     else:
-        checks["毛利率扩张"] = d["gm"] > 45
+        checks["GM expansion"] = d["gm"] > 45
 
-    # 3. EPS超预期 > 10%
-    checks["盈利惊喜"] = d["eps_beat"] > 10
+    # 3. EPS beat > 10%
+    checks["Earnings surprise"] = d["eps_beat"] > 10
 
-    # 4. 营收高增长 > 15%
-    checks["营收高增长"] = d["rev_yoy"] > 15
+    # 4. High revenue growth > 15%
+    checks["High rev growth"] = d["rev_yoy"] > 15
 
-    # 5. 毛利率健康 > 40%
-    checks["毛利率健康"] = d["gm"] > 40
+    # 5. Healthy gross margin > 40%
+    checks["Healthy GM"] = d["gm"] > 40
 
-    # 6. ★改进：毛利率连续2季改善（解决NVDA 2023-01漏判）
+    # 6. ★Improvement: gross margin improving for 2 consecutive quarters (fixes NVDA 2023-01 miss)
     if pd and pd2:
-        checks["毛利连续改善"] = d["gm"] > pd["gm"] > pd2["gm"]
+        checks["GM improving 2Q"] = d["gm"] > pd["gm"] > pd2["gm"]
     elif pd:
-        checks["毛利连续改善"] = d["gm"] > pd["gm"]
+        checks["GM improving 2Q"] = d["gm"] > pd["gm"]
     else:
-        checks["毛利连续改善"] = False
+        checks["GM improving 2Q"] = False
 
     score = sum(1 for v in checks.values() if v)
 
-    # ★改进：独立通过条件
+    # ★Improvement: standalone pass conditions
     independent_pass = False
     independent_reason = ""
 
-    # 条件A：毛利率连续2季改善 + 毛利>45%（NVDA 2023-01场景）
-    if checks.get("毛利连续改善") and d["gm"] > 45:
+    # Condition A: gross margin improving for 2 quarters + GM > 45% (NVDA 2023-01 scenario)
+    if checks.get("GM improving 2Q") and d["gm"] > 45:
         independent_pass = True
-        independent_reason = "毛利率连续改善+>45%"
+        independent_reason = "GM improving + >45%"
 
-    # 条件B：EPS超预期>30%（MU底部场景）
+    # Condition B: EPS beat > 30% (MU bottom scenario)
     if d["eps_beat"] > 30:
         independent_pass = True
-        independent_reason = "EPS超预期>30%（周期股信号）"
+        independent_reason = "EPS beat >30% (cyclical signal)"
 
     return {
         "score": score,
@@ -250,42 +250,42 @@ def check_value(ticker, signal_date=None):
 
 
 # ============================================================
-# 信号分级
+# Signal tiers
 # ============================================================
 
 def grade_signal(momentum, value):
-    """综合评级"""
+    """Overall rating"""
     if not momentum or not momentum["triggered"]:
-        return "SKIP", "无动量信号", ""
+        return "SKIP", "No momentum signal", ""
 
     if not value:
-        return "WATCH", "动量触发但无基本面数据", "补充基本面"
+        return "WATCH", "Momentum triggered but no fundamental data", "Add fundamentals"
 
     score = value["score"]
     ind = value["independent_pass"]
 
     if score >= 5 or (score >= 4 and ind):
-        return "BUY_8%", f"确信仓（{score}/6）", "建议8%仓位"
+        return "BUY_8%", f"Conviction position ({score}/6)", "Suggested 8% position"
     elif score >= 4 or (score >= 3 and ind):
-        return "BUY_5%", f"标准仓（{score}/6）", "建议5%仓位"
+        return "BUY_5%", f"Standard position ({score}/6)", "Suggested 5% position"
     elif score >= 3:
-        return "BUY_3%", f"试探仓（{score}/6）", "建议3%仓位"
+        return "BUY_3%", f"Probe position ({score}/6)", "Suggested 3% position"
     elif ind:
-        return "BUY_3%", f"独立条件通过：{value['independent_reason']}", "建议3%仓位"
+        return "BUY_3%", f"Standalone condition passed: {value['independent_reason']}", "Suggested 3% position"
     else:
-        return "PASS", f"动量有但基本面不足（{score}/6）", "继续观察"
+        return "PASS", f"Momentum present but fundamentals insufficient ({score}/6)", "Keep watching"
 
 
 # ============================================================
-# 扫描一个标的
+# Scan one ticker
 # ============================================================
 
 def scan_ticker(ticker, verbose=True):
-    """扫描单个标的"""
+    """Scan a single ticker"""
     prices = fetch_prices_curl(ticker)
     if not prices:
         if verbose:
-            print(f"  {ticker:<8} ⚠️  无法获取价格数据")
+            print(f"  {ticker:<8} ⚠️  Unable to fetch price data")
         return None
 
     momentum = check_momentum(prices)
@@ -302,50 +302,50 @@ def scan_ticker(ticker, verbose=True):
     }
 
     if verbose:
-        # 紧凑输出
+        # Compact output
         m = momentum
         symbol = {"BUY_8%": "🔴", "BUY_5%": "🟡", "BUY_3%": "🟢", "WATCH": "👀", "PASS": "⬜", "SKIP": "  "}
         s = symbol.get(grade, "  ")
 
         if grade.startswith("BUY"):
-            print(f"  {s} {ticker:<8} ${m['close']:<8} 30日+{m['pct_30d']}% 放量{m['vol_ratio']}x  → {grade} {reason}")
+            print(f"  {s} {ticker:<8} ${m['close']:<8} 30d+{m['pct_30d']}% vol{m['vol_ratio']}x  → {grade} {reason}")
             if value:
                 v = value
                 checks_str = " ".join(f"{'✅' if val else '❌'}{k}" for k, val in v["checks"].items())
-                print(f"     基本面({v['fund_label']}): 营收{v['fund']['rev_yoy']}% 毛利{v['fund']['gm']}% EPS超{v['fund']['eps_beat']}%")
+                print(f"     Fundamentals({v['fund_label']}): rev {v['fund']['rev_yoy']}% GM {v['fund']['gm']}% EPS beat {v['fund']['eps_beat']}%")
                 print(f"     {checks_str}")
                 if v["independent_pass"]:
-                    print(f"     ★独立通过：{v['independent_reason']}")
+                    print(f"     ★Standalone pass: {v['independent_reason']}")
         elif grade == "WATCH":
-            print(f"  {s} {ticker:<8} ${m['close']:<8} 30日+{m['pct_30d']}%  → 动量触发！需补充基本面数据")
+            print(f"  {s} {ticker:<8} ${m['close']:<8} 30d+{m['pct_30d']}%  → Momentum triggered! Need to add fundamental data")
         elif grade == "PASS":
             print(f"  {s} {ticker:<8} ${m['close']:<8}  → {reason}")
-        # SKIP不输出
+        # SKIP produces no output
 
     return result
 
 
 # ============================================================
-# 主程序
+# Main program
 # ============================================================
 
 def main():
     args = sys.argv[1:]
 
-    # 更新模式
+    # Update mode
     if args and args[0] == "--update":
-        ticker = args[1] if len(args) > 1 else input("  标的代码: ").strip().upper()
+        ticker = args[1] if len(args) > 1 else input("  Ticker symbol: ").strip().upper()
         update_fundamental_interactive(ticker)
         return
 
-    # 初始化默认watchlist
+    # Initialize the default watchlist
     os.makedirs(DATA_DIR, exist_ok=True)
     if not os.path.exists(WATCHLIST_FILE):
         with open(WATCHLIST_FILE, "w") as f:
             json.dump(DEFAULT_WATCHLIST, f, indent=2)
-        print(f"  已创建默认watchlist: {WATCHLIST_FILE}")
+        print(f"  Created default watchlist: {WATCHLIST_FILE}")
 
-    # 确定扫描范围
+    # Determine scan scope
     if args:
         tickers = [t.upper() for t in args]
     else:
@@ -355,11 +355,11 @@ def main():
         for group, syms in wl.items():
             tickers.extend(syms)
 
-    # 执行扫描
+    # Run the scan
     today = datetime.now().strftime("%Y-%m-%d")
     print(f"\n{'='*70}")
-    print(f"  动量发现 + 价值验证 选股筛  {today}")
-    print(f"  扫描范围：{len(tickers)} 个标的")
+    print(f"  Momentum discovery + value verification stock screener  {today}")
+    print(f"  Scan scope: {len(tickers)} tickers")
     print(f"{'='*70}\n")
 
     buy_signals = []
@@ -373,28 +373,28 @@ def main():
             elif result["grade"] == "WATCH":
                 watch_signals.append(result)
 
-    # 汇总
+    # Summary
     print(f"\n{'='*70}")
-    print(f"  📋 扫描结果汇总")
+    print(f"  📋 Scan results summary")
     print(f"{'='*70}")
 
     if buy_signals:
-        print(f"\n  🎯 买入信号：{len(buy_signals)} 个")
+        print(f"\n  🎯 Buy signals: {len(buy_signals)}")
         for s in sorted(buy_signals, key=lambda x: x["grade"], reverse=True):
             m = s["momentum"]
             print(f"     {s['grade']:<8} {s['ticker']:<8} ${m['close']:<8} {s['reason']}")
     else:
-        print(f"\n  无买入信号")
+        print(f"\n  No buy signals")
 
     if watch_signals:
-        print(f"\n  👀 观察（需补基本面）：{len(watch_signals)} 个")
+        print(f"\n  👀 Watch (need fundamentals): {len(watch_signals)}")
         for s in watch_signals:
             m = s["momentum"]
-            print(f"     {s['ticker']:<8} ${m['close']:<8} 30日+{m['pct_30d']}% — 请用 --update {s['ticker']} 补充")
+            print(f"     {s['ticker']:<8} ${m['close']:<8} 30d+{m['pct_30d']}% — use --update {s['ticker']} to add")
 
-    print(f"\n  基本面数据文件：{FUND_FILE}")
-    print(f"  Watchlist文件：{WATCHLIST_FILE}")
-    print(f"  用 --update TICKER 补充/更新基本面\n")
+    print(f"\n  Fundamental data file: {FUND_FILE}")
+    print(f"  Watchlist file: {WATCHLIST_FILE}")
+    print(f"  Use --update TICKER to add/update fundamentals\n")
 
 
 if __name__ == "__main__":

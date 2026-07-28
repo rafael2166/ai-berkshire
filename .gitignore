@@ -1,34 +1,28 @@
-# ===== 系统与工具产物 =====
+# ===== System & tool artifacts =====
 .DS_Store
 __pycache__/
 *.pyc
 .codex/
 /tmp/
 logs/command-log.jsonl
-reports/美团/command-log.jsonl
 
-# 雪球爬虫登录态缓存（含 cookies，本地使用）
-/tmp/xueqiu_state.json
-
-# ===== 音视频大文件不入库 =====
-# 如确需提交某个文件，用 git add -f 显式加入
+# ===== Large audio/video files not tracked =====
+# To commit a specific file anyway, add it explicitly with: git add -f
 *.m4a
 *.mp3
 *.wav
 *.mp4
 *.mov
 
-# ===== 本地资料区：不打算公开的文件放这个目录，永不入库 =====
-# API token（如 FinMind 的 local/finmind_token.txt）也放这里，只留本机
+# ===== Local-only working area: never tracked =====
+# Put API tokens and other machine-only files here.
 /local/
 
-# ===== 密钥/凭证类文件，任何位置一律不入库 =====
+# ===== Secrets / credentials: never tracked, anywhere =====
 .env
 .env.*
 *_token.txt
 *.token
 
-# 组合报告只存本地，不公开
+# Portfolio report is kept local, not published
 reports/portfolio-latest.md
-
-# 实盘记录/ 公开权重口径版；原始账本（含股数/金额）在 local/实盘记录-原始/（已被 /local/ 规则覆盖）

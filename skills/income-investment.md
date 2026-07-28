@@ -6,6 +6,8 @@ Analyze `$ARGUMENTS` to answer:
 
 Never treat a high displayed yield as evidence of a good opportunity. This workflow is for learning and research, not personalized investment advice.
 
+Default market is Brazil / B3. Default tickers are B3 (e.g. PETR4, VALE3, ITUB4, BBAS3, WEGE3, ABEV3). Currency is BRL (R$); state it explicitly and note USD ADRs where relevant. Report in English.
+
 ## Input
 
 Use this command form:
@@ -35,7 +37,7 @@ Use or refer to existing workflows instead of reproducing them:
 ## Research Discipline
 
 1. Run `date` before research. Put the data cutoff date in the report header.
-2. Prefer annual and interim reports, earnings releases, investor documents, regulatory filings, official releases, and official exchange data, in that order. Use secondary sources only to fill gaps and label them as secondary.
+2. Prefer annual and interim reports, earnings releases, investor documents, regulatory filings, official releases, and official exchange data, in that order. For Brazilian issuers, source filings from CVM via the RAD portal (www.rad.cvm.gov.br), company RI ("Relações com Investidores") sites, and B3 (www.b3.com.br); for US-listed companies and ADRs, use SEC EDGAR. Use secondary sources only to fill gaps and label them as secondary. Prefer the connected MCP market-data tools (a market-data server plus finnhub), together with WebSearch/WebFetch, for prices, quotes, fundamentals, and document discovery; do not scrape market data.
 3. Apply `skills/financial-data.md`: verify decision-critical financial data with at least two independent sources when available and flag discrepancies above 1%.
 4. Date or period-label every time-sensitive figure. Separate every material statement as **Verified fact**, **Estimate**, **Assumption**, or **Analytical judgment**.
 5. Use `python3 tools/financial_rigor.py` for exact payout, yield, valuation, market-cap, portfolio-income, and scenario arithmetic. Never rely on mental arithmetic for a decision-sensitive result.
@@ -174,12 +176,12 @@ Use these headings exactly once and avoid repeating the same analysis:
 17. One-sentence conclusion
 18. Sources and data quality
 
-Save the result to `reports/{company}-income-investment-{YYYYMMDD}.md`, using a filesystem-safe company identifier. Include the scorecard and blocking-gate result in section 2, the monthly income calendar in section 11 when calculable, and source title, issuer/publisher, publication date, accessed date, reporting period, URL, and primary/secondary label in section 18.
+Save the result to `reports/{Company}/{Company}-income-investment-{YYYYMMDD}.md`, using a filesystem-safe company identifier. Include the scorecard and blocking-gate result in section 2, the monthly income calendar in section 11 when calculable, and source title, issuer/publisher, publication date, accessed date, reporting period, URL, and primary/secondary label in section 18.
 
 ## Release Audit
 
 ```bash
-python3 tools/report_audit.py extract --report reports/{company}-income-investment-{YYYYMMDD}.md
+python3 tools/report_audit.py extract --report reports/{Company}/{Company}-income-investment-{YYYYMMDD}.md
 # Verify every extracted item against reliable sources, then:
 python3 tools/report_audit.py verdict --results '<verified JSON>' --report {company}-income-investment-{YYYYMMDD}.md
 ```

@@ -1,444 +1,331 @@
-# 财报精读团队：四大师并行解读 + 公众号发布
+# Earnings Review Team: Four Masters Reading in Parallel
 
-对 $ARGUMENTS 进行团队化财报精读分析。四位大师并行解读财报，编辑润色成文，读者评审把关质量，最终产出可直接发布的公众号文章。
+Run a team-based deep earnings review of $ARGUMENTS. Four masters read the filing in parallel, and the Team Lead synthesizes their work into a single research report.
 
-**支持输入格式**：`公司名 季度`，例如：`腾讯 2025Q4`、`PDD 2025年报`、`美团 最新`
+**Supported input formats**: `Company Quarter`, e.g. `Petrobras 2025Q4`, `Vale 2025 Annual Report`, `Itau latest`
 
-## 设计理念
+Default market is Brazil / B3. Default tickers are B3 (e.g. PETR4, VALE3, ITUB4, BBAS3, WEGE3, ABEV3). Currency is BRL (R$); state it explicitly and note USD ADRs where relevant.
 
-一份好的财报分析要解决两个问题：
-1. **自己能看懂未来**——需要四个不同视角的深度研究
-2. **读者能看懂价值**——需要编辑润色和读者视角的质量把关
+## Design Philosophy
 
-本 Skill 的流程分三阶段：
-- **阶段一·研究**：四大师并行精读财报（段永平看生意本质、巴菲特审财务质量、芒格读竞争变化、李录猎风险信号）
-- **阶段二·合成**：Team Lead 综合四个视角，产出研究报告初稿
-- **阶段三·发布**：编辑 Agent 改写为公众号文章 + 读者评审 Agent 提出修改意见 → Team Lead 定稿
+A good earnings analysis has to solve one core problem: **understanding the future for yourself** — which requires deep research from several different perspectives.
 
----
-
-## 阶段一：四大师并行研究
-
-### 第一步：获取一手资料
-
-使用 Agent 工具启动后台 Agent **并行**获取以下原始材料：
-
-| 资料类型 | 获取来源 | 优先级 |
-|---------|---------|--------|
-| 财报原文 | 公司IR页面、SEC EDGAR（美股）、港交所披露易（港股）、巨潮资讯网（A股） | 最高 |
-| 业绩电话会纪要 | Seeking Alpha、公司IR页面、雪球 | 最高 |
-| 管理层致股东信 | 年报中提取 | 高（仅年报时） |
-| 上一期财报/电话会 | 同上 | 高（用于承诺追踪） |
-
-**资料可得性评级**：
-
-| 等级 | 特征 | 影响 |
-|------|------|------|
-| A级 | 获取到完整原文 | 正常执行全部步骤 |
-| B级 | 仅获取到部分原文或第三方汇总 | 标注"非原始来源"，降低附注分析权重 |
-| C级 | 仅有新闻报道和数据网站摘要 | 聚焦核心数据变化，跳过附注挖掘，标注"一手资料不足" |
-
-将资料可得性评级告知每个 Agent，影响其分析深度。
-
-### 第二步：向用户展示团队框架
-
-| 阶段 | 角色 | 大师/定位 | 核心任务 |
-|------|------|----------|---------|
-| 研究 | **Team Lead**（你自己） | 总协调 | 统筹、合成、定稿 |
-| 研究 | 生意本质解读者 | 段永平 | 这门生意变好了还是变差了？ |
-| 研究 | 财务质量审计师 | 巴菲特 | 赚的是真钱还是假钱？ |
-| 研究 | 竞争变化解读者 | 芒格 | 竞争格局在怎么变？ |
-| 研究 | 风险信号猎手 | 李录 | 管理层在隐瞒什么？ |
-| 发布 | 编辑 | 公众号写作 | 把研究报告改写成好文章 |
-| 发布 | 读者评审 | 普通投资者 | 读者能看懂吗？有收获吗？ |
-
-### 第三步：启动4个并行研究Agent
-
-使用 Agent 工具在**同一条消息**中启动4个后台 Agent。
+This Skill runs in two stages:
+- **Stage 1 · Research**: the four masters read the filing in parallel (Duan Yongping reads the nature of the business, Buffett audits earnings quality, Munger reads the shift in competition, Li Lu hunts for risk signals).
+- **Stage 2 · Synthesis**: the Team Lead integrates the four perspectives into a single research report.
 
 ---
 
-#### Agent 1：生意本质解读（段永平视角）
+## Stage 1: Four Masters Researching in Parallel
 
-**核心问题：这份财报反映的生意本质，变好了还是变差了？**
+### Step 1: Obtain Primary Sources
 
-> 段永平："投资就是买一门生意。看财报不是看数字，是看这门生意有没有变。"
+Use the Agent tool to launch background Agents **in parallel** to obtain the following raw materials:
 
-分析内容：
+| Material Type | Source | Priority |
+|---------------|--------|----------|
+| Original filing | Company RI site; CVM via the RAD portal (www.rad.cvm.gov.br) for Brazilian issuers; SEC (EDGAR) for US-listed ADRs; market data via B3 | Highest |
+| Earnings-call transcript | Company RI site; earnings-call providers; reputable financial-news sources | Highest |
+| Management letter to shareholders | Extracted from the annual report | High (annual reports only) |
+| Prior-period filing / call | Same as above | High (used for promise tracking) |
 
-1. **收入结构拆解与解读**
-   - 分业务/分地区收入，哪些在加速、哪些在减速
-   - 不只是列数字——每个业务板块反映了什么商业逻辑
-   - 收入增长来自"量"还是"价"？哪种更健康？
+The analyst also has MCP market-data tools available (a market-data server plus finnhub) as well as WebSearch/WebFetch; prefer those for pricing, fundamentals, and filings discovery.
 
-2. **用户/客户价值变化**
-   - DAU/MAU/付费用户等运营指标变化
-   - 用户时长、ARPU、留存率等质量指标
-   - 平台/产品对用户的价值在增强还是减弱？
+**Source-availability rating**:
 
-3. **护城河检测**
-   - 毛利率变化反映定价权是否稳固
-   - 市场份额变化反映竞争壁垒是否有效
-   - 客户转换成本/网络效应有没有被削弱的信号
+| Grade | Characteristics | Impact |
+|-------|-----------------|--------|
+| A | Complete original filing obtained | Execute all steps normally |
+| B | Only partial original text or a third-party summary | Flag as "not a primary source"; reduce the weight of footnote analysis |
+| C | Only news reports and data-website summaries | Focus on core data changes, skip footnote mining, flag as "insufficient primary sources" |
 
-4. **"好生意"标准评估**
-   - 段永平三条件：差异化、定价权、可持续竞争优势——本期变化
-   - 生意在变"重"还是变"轻"？
-   - 如果明天公司关门，用户会不会非常痛苦？因为这份财报变了吗？
+Communicate the source-availability rating to each Agent; it affects the depth of their analysis.
 
-5. **管理层产品直觉**
-   - 管理层讨论产品/用户时，用的是具体语言还是官僚语言
-   - 是否有令人印象深刻的产品洞察或令人担忧的脱节信号
+### Step 2: Present the Team Framework to the User
 
-**输出要求**：每个子项标注 🟢改善 / 🟡持平 / 🔴恶化，给出段永平式总结点评。
+| Stage | Role | Master / Positioning | Core Task |
+|-------|------|----------------------|-----------|
+| Research | **Team Lead** (yourself) | Overall coordination | Coordinate, synthesize, finalize |
+| Research | Business-nature reader | Duan Yongping | Did the business get better or worse? |
+| Research | Financial-quality auditor | Warren Buffett | Is it earning real money or fake money? |
+| Research | Competition-shift reader | Charlie Munger | How is the competitive landscape changing? |
+| Research | Risk-signal hunter | Li Lu | What is management hiding? |
+
+### Step 3: Launch the 4 Parallel Research Agents
+
+Use the Agent tool to launch 4 background Agents in a **single message**.
 
 ---
 
-#### Agent 2：财务质量审计（巴菲特视角）
+#### Agent 1: Reading the Nature of the Business (Duan Yongping's Lens)
 
-**核心问题：这家公司赚的是真钱还是假钱？安全边际变了吗？**
+**Core question: Did the business reflected in this filing get better or worse?**
 
-> 巴菲特："我看每一份财报，第一件事就是翻到现金流量表。"
+> Duan Yongping: "Investing is buying a business. Reading a filing isn't about reading numbers — it's about whether the business has changed."
 
-分析内容：
+Analysis content:
 
-1. **核心财务数据提取与验证**
-   - 收入、毛利、经营利润、净利润——GAAP和Non-GAAP都要
-   - GAAP vs Non-GAAP差异：差了多少、差在哪里、差距扩大还是缩小
-   - 关键数据至少两个来源交叉验证
+1. **Revenue-mix breakdown and interpretation**
+   - Revenue by segment/geography — which parts are accelerating, which are slowing.
+   - Don't just list numbers — what business logic does each segment reflect?
+   - Is revenue growth coming from "volume" or "price"? Which is healthier?
+
+2. **Change in user/customer value**
+   - Changes in operating metrics such as DAU/MAU/paying users.
+   - Quality metrics such as time spent, ARPU, and retention.
+   - Is the value of the platform/product to users strengthening or weakening?
+
+3. **Moat check**
+   - Does the change in gross margin reflect stable pricing power?
+   - Does the change in market share reflect an effective competitive barrier?
+   - Any sign that switching costs / network effects are being eroded?
+
+4. **"Good business" test**
+   - Duan Yongping's three conditions: differentiation, pricing power, sustainable competitive advantage — how did they change this period?
+   - Is the business getting "heavier" or "lighter"?
+   - If the company shut down tomorrow, would users be in real pain? Did this filing change that?
+
+5. **Management's product instinct**
+   - When management discusses product/users, is the language concrete or bureaucratic?
+   - Any impressive product insight, or any worrying sign of disconnection?
+
+**Output requirement**: mark each sub-item 🟢 improving / 🟡 flat / 🔴 deteriorating, and give a Duan Yongping-style summary comment.
+
+---
+
+#### Agent 2: Financial-Quality Audit (Buffett's Lens)
+
+**Core question: Is this company earning real money or fake money? Did the margin of safety change?**
+
+> Buffett: "The first thing I do with every filing is turn to the cash-flow statement."
+
+Analysis content:
+
+1. **Extraction and verification of core financial data**
+   - Revenue, gross profit, operating profit, net income — both GAAP/IFRS and non-GAAP/adjusted.
+   - GAAP vs. non-GAAP gap: how large, where it sits, and whether it is widening or narrowing.
+   - Cross-validate key figures against at least two sources.
 
    ```bash
    python3 tools/financial_rigor.py cross-validate \
-     --metric "revenue" --values {值1} {值2} --sources "来源1" "来源2"
+     --metric "revenue" --values {value1} {value2} --sources "{source1}" "{source2}"
    ```
 
-2. **现金流分析（最重要）**
-   - 经营现金流 vs 净利润比率（>100%佳，<80%警惕）
-   - 自由现金流 = 经营现金流 - 资本开支
-   - 资本开支构成：维护性 vs 扩张性
-   - 回购和分红金额
+2. **Cash-flow analysis (most important)**
+   - Operating cash flow vs. net income ratio (>100% good, <80% caution).
+   - Free cash flow = operating cash flow − capex.
+   - Capex composition: maintenance vs. expansion.
+   - Buyback and dividend amounts.
 
-3. **利润质量检验**
-   - 应收账款增速 vs 收入增速
-   - 存货增速 vs 收入增速
-   - 经营现金流与净利润差距趋势
-   - 资本化支出是否突然增加
-   - 非经常性收益占比
+3. **Earnings-quality checks**
+   - Receivables growth vs. revenue growth.
+   - Inventory growth vs. revenue growth.
+   - Trend in the gap between operating cash flow and net income.
+   - Any sudden increase in capitalized expenditure.
+   - Share of non-recurring gains.
 
-4. **资产负债表健康度**
-   - 净现金/净负债变化
-   - 应收账款/存货周转天数变化
-   - 商誉及无形资产减值风险
+4. **Balance-sheet health**
+   - Change in net cash / net debt.
+   - Change in days-receivable / days-inventory turnover.
+   - Impairment risk in goodwill and intangibles.
 
-5. **估值与安全边际更新**
+5. **Valuation and margin-of-safety update**
 
    ```bash
    python3 tools/financial_rigor.py verify-market-cap \
-     --price {价格} --shares {股本} --reported {报告市值} --currency {币种}
+     --price {price} --shares {shares} --reported {reported market cap} --currency {currency}
    python3 tools/financial_rigor.py verify-valuation \
-     --price {价格} --eps {EPS} --bvps {每股净资产}
+     --price {price} --eps {EPS} --bvps {book value per share}
    python3 tools/financial_rigor.py three-scenario \
-     --price {价格} --eps {EPS} --shares {股本亿} \
-     --growth {乐观} {中性} {悲观} --pe {乐观PE} {中性PE} {悲观PE}
+     --price {price} --eps {EPS} --shares {shares, billions} \
+     --growth {bull} {base} {bear} --pe {bull PE} {base PE} {bear PE}
    ```
 
-**输出要求**：所有计算附工具输出记录，利润质量信号灯 🟢/🟡/🔴，巴菲特式总结点评。
+**Output requirement**: attach the tool output for every calculation, mark earnings-quality with 🟢/🟡/🔴 signal lights, and give a Buffett-style summary comment.
 
 ---
 
-#### Agent 3：竞争格局解读（芒格视角）
+#### Agent 3: Reading the Competitive Landscape (Munger's Lens)
 
-**核心问题：这份财报揭示了竞争格局的什么变化？**
+**Core question: What does this filing reveal about changes in the competitive landscape?**
 
-> 芒格："我想知道我会死在哪里，这样我就不去那儿了。"
+> Munger: "I want to know where I'm going to die, so I'll never go there."
 
-分析内容：
+Analysis content:
 
-1. **从财报数据推断竞争变化**
-   - 收入增速 vs 行业增速——跑赢还是跑输？
-   - 毛利率变化反映竞争加剧/缓和
-   - 营销费用率变化——需要花更多钱获客吗？
-   - 研发投入——主动投入还是被迫跟进？
+1. **Infer competitive changes from the filing's data**
+   - Revenue growth vs. industry growth — outperforming or lagging?
+   - Change in gross margin reflecting intensifying/easing competition.
+   - Change in the marketing-expense ratio — does it cost more to acquire customers now?
+   - R&D spend — proactive investment or forced follow-through?
 
-2. **同期竞争对手对比**
-   - 主要竞争对手同期关键指标对比（如已发布）
-   - 增速、利润率、投入力度对比
-   - 谁在赢？谁在输？
+2. **Same-period comparison against competitors**
+   - Compare key metrics against major competitors for the same period (where published).
+   - Compare growth, margins, and investment intensity.
+   - Who is winning? Who is losing?
 
-3. **管理层对竞争的讨论**
-   - 电话会上如何描述竞争环境
-   - 是否点名竞争对手？语气自信还是焦虑？
-   - 有没有新的竞争威胁？
+3. **Management's discussion of competition**
+   - How is the competitive environment described on the call?
+   - Any competitors named? Is the tone confident or anxious?
+   - Any new competitive threat?
 
-4. **行业趋势信号**
-   - 技术变革（AI/新平台等）的影响
-   - 监管变化对竞争格局的影响
-   - 消费/需求端趋势
+4. **Industry-trend signals**
+   - Impact of technological change (AI/new platforms, etc.).
+   - Impact of regulatory change on the competitive landscape.
+   - Consumer/demand-side trends.
 
-5. **芒格式逆向思考**
-   - 什么会杀死这家公司？本期财报有没有指向这些威胁的信号？
-   - 5年后回看，这份财报会是"转折点"吗？
+5. **Munger-style inversion**
+   - What would kill this company? Does this filing point to any of those threats?
+   - Looking back in 5 years, will this filing be a "turning point"?
 
-**输出要求**：竞争格局判断（加强/持平/恶化），竞争对手对比表，芒格式逆向点评。
-
----
-
-#### Agent 4：风险信号猎手（李录视角）
-
-**核心问题：管理层在这份财报里隐瞒了什么？哪些信号在闪烁？**
-
-> 李录："投资最重要的是避免永久性资本损失。"
-
-分析内容：
-
-1. **管理层语气分析**
-   - 逐段阅读管理层讨论和电话会发言，标注信号：
-   - 🟢坦诚信号（主动承认问题）/ 🟢清晰信号（有量化目标）
-   - 🔴模糊信号（空话）/ 🔴转移信号（答非所问）/ 🔴归因外部化
-
-2. **承诺追踪**
-   - 上一期管理层具体承诺 vs 本期实际兑现，逐条对比
-   - 段永平："看管理层靠不靠谱，就看以前说的话做到了没有。"
-
-3. **附注与隐藏信息**
-   - 关联交易、股权激励稀释、或有负债
-   - 会计政策变更、分部利润率差异
-   - 客户/供应商集中度变化
-
-4. **电话会Q&A精选**
-   - 最尖锐的3-5个分析师问题及管理层回答质量评分
-
-5. **永久性资本损失风险**
-   - 是否出现可能导致永久性损失的信号
-   - 监管/合规/诉讼风险新进展
-   - 管理层是否做出了不可逆的错误决策
-
-**输出要求**：管理层可信度评分★1-5，承诺兑现率，风险信号清单，李录式总结点评。
+**Output requirement**: a competitive-landscape verdict (strengthening/flat/deteriorating), a competitor-comparison table, and a Munger-style inversion comment.
 
 ---
 
-### 第四步：跟踪进度
+#### Agent 4: Risk-Signal Hunter (Li Lu's Lens)
 
-向用户实时展示：
+**Core question: What is management hiding in this filing? Which signals are flashing?**
+
+> Li Lu: "The most important thing in investing is to avoid permanent loss of capital."
+
+Analysis content:
+
+1. **Management-tone analysis**
+   - Read the management discussion and call remarks paragraph by paragraph, flagging signals:
+   - 🟢 candor signal (proactively admits problems) / 🟢 clarity signal (quantified targets)
+   - 🔴 vagueness signal (empty talk) / 🔴 deflection signal (answering a different question) / 🔴 externalizing blame
+
+2. **Promise tracking**
+   - Management's specific commitments last period vs. what was actually delivered this period, item by item.
+   - Duan Yongping: "To judge whether management is reliable, check whether they did what they said they would."
+
+3. **Footnotes and hidden information**
+   - Related-party transactions, dilution from share-based comp, contingent liabilities.
+   - Accounting-policy changes, segment-margin differences.
+   - Changes in customer/supplier concentration.
+
+4. **Selected earnings-call Q&A**
+   - The 3-5 sharpest analyst questions and a quality score for management's answers.
+
+5. **Permanent-loss risk**
+   - Any signal that could lead to permanent loss of capital?
+   - New developments in regulatory/compliance/litigation risk.
+   - Any irreversible wrong decision by management?
+
+**Output requirement**: a management-credibility score ★1-5, a promise-fulfillment rate, a risk-signal checklist, and a Li Lu-style summary comment.
+
+---
+
+### Step 4: Track Progress
+
+Show the user live progress:
 
 ```
-📊 {公司名} {期间} 财报精读进度
+📊 {Company} {Period} Earnings Review Progress
 ━━━━━━━━━━━━━━━━━━━━━━━
-阶段一·研究
-  ☐ 段永平·生意本质    ⏳ 分析中...
-  ☐ 巴菲特·财务质量    ⏳ 分析中...
-  ☐ 芒格·竞争格局      ⏳ 分析中...
-  ☐ 李录·风险信号      ⏳ 分析中...
-阶段二·合成            ⏸ 等待中
-阶段三·发布            ⏸ 等待中
+Stage 1 · Research
+  ☐ Duan Yongping · Business nature   ⏳ Analyzing...
+  ☐ Buffett · Financial quality       ⏳ Analyzing...
+  ☐ Munger · Competitive landscape    ⏳ Analyzing...
+  ☐ Li Lu · Risk signals              ⏳ Analyzing...
+Stage 2 · Synthesis                   ⏸ Waiting
 ```
 
-每收到一份报告，更新进度并展示核心发现（3-5条）。
+As each report arrives, update progress and show its core findings (3-5 items).
 
 ---
 
-## 阶段二：Team Lead 合成研究报告
+## Stage 2: Team Lead Synthesizes the Research Report
 
-全部4份研究报告到齐后，Team Lead 综合产出研究报告初稿。
+Once all 4 research reports are in, the Team Lead integrates them into the final research report.
 
-**合成要点**——不是拼报告，是找交叉和矛盾：
+**Synthesis principles** — this is not stapling reports together; it is finding intersections and contradictions:
 
-1. **四个视角的共识点**：四位大师都同意的结论，可信度最高
-2. **四个视角的矛盾点**：比如段永平说生意变好了，但芒格说竞争在恶化——这种矛盾才是最有价值的分析
-3. **被忽略的角落**：四个人都没重点提的东西，是否恰恰是最重要的？
+1. **Points of consensus across the four perspectives**: conclusions all four masters agree on carry the highest confidence.
+2. **Points of contradiction across the four perspectives**: e.g. Duan Yongping says the business improved but Munger says competition is deteriorating — this kind of contradiction is the most valuable analysis.
+3. **The overlooked corner**: what none of the four emphasized — could that be exactly the most important thing?
 
-#### 研究报告结构
+#### Research-Report Structure
 
 ```markdown
-# {公司名} {期间} 财报精读报告
-**四大师并行解读 | {日期}**
+# {Company} {Period} Earnings Review Report
+**Four Masters Reading in Parallel | {Date}**
 
-## 一、一句话结论
-> 50-100字：超/符/低预期，核心变化，对投资论文的影响。
+## 1. One-Sentence Conclusion
+> 50-100 words: beat/in line/miss, the core change, and the impact on the investment thesis.
 
-## 二、本期最重要的3个变化
-聚焦真正重要的变化，不罗列数据，每个变化100字以内。
+## 2. The 3 Most Important Changes This Period
+Focus on the changes that truly matter; don't list data. Under 100 words each.
 
-## 三、四大师评分表
-| 视角 | 大师 | 核心问题 | 结论 | 评分 | vs上期 |
-|------|------|---------|------|------|--------|
+## 3. Four-Masters Scorecard
+| Perspective | Master | Core Question | Conclusion | Score | vs. Prior |
+|-------------|--------|---------------|------------|-------|-----------|
 
-## 四、核心数据速览
-关键财务和运营指标表格（本期 vs 上期 vs 同比）
+## 4. Core Data at a Glance
+Key financial and operating metrics table (current vs. prior vs. YoY)
 
-## 五、各视角深度分析
-每个视角3-5条最重要发现
+## 5. Deep Analysis by Perspective
+The 3-5 most important findings for each perspective
 
-## 六、管理层语气与承诺追踪
-承诺兑现表 + 语气变化分析
+## 6. Management Tone and Promise Tracking
+Promise-fulfillment table + tone-change analysis
 
-## 七、四大师会怎么做？
-| 大师 | 如果持有 | 如果没持有 | 理由 |
+## 7. What Would the Four Masters Do?
+| Master | If Holding | If Not Holding | Rationale |
 
-## 八、结论
-1. 超/符/低预期？
-2. 投资论文影响：强化/无影响/削弱/破裂
-3. 下一个催化剂
-4. 操作建议
+## 8. Conclusion
+1. Beat / in line / miss?
+2. Thesis impact: reinforced / no impact / weakened / broken
+3. Next catalyst
+4. Action recommendation
 ```
 
 ---
 
-## 阶段三：编辑润色 + 读者评审
+## Output Files
 
-研究报告完成后，**并行**启动两个 Agent：
-
-### Agent 5：编辑（公众号文章改写）
-
-**定位**：把硬核研究报告改写成公众号读者爱看、能看懂的文章。
-
-**核心原则**：
-- 保留所有关键数据和结论，不降低专业深度
-- 改善表达方式，让非专业投资者也能跟上逻辑
-- 不是"科普化"，是"让专业内容读起来不累"
-
-**具体任务**：
-
-1. **标题与开头**
-   - 标题要有信息量且吸引点击，但不做标题党
-   - 好标题示例："快手花260亿赌AI，赌赢了吗？"
-   - 坏标题示例："震惊！快手财报暴雷！"
-   - 开头100字内讲清楚：这份财报最重要的结论是什么、为什么读者应该关心
-
-2. **结构优化**
-   - 研究报告是给自己看的，公众号文章是给别人看的——调整逻辑顺序
-   - 把"最重要的3个变化"放在最前面（倒金字塔结构）
-   - 表格保留但精简，大段分析改为要点式
-   - 每500字左右插入一个"阶段性小结"，帮读者消化
-
-3. **表达润色**
-   - 把生硬的财务术语用类比/场景解释："经营现金流比净利润低30%"→"赚了100块但口袋里只摸到70块"
-   - 四大师的点评语录是文章的灵魂——确保每条都读起来犀利、有记忆点
-   - 段落不超过4行，句子不超过30字
-   - 适度使用对比和反差制造阅读节奏
-
-4. **读者价值检测**
-   - 每个章节自问：读者读完这段，能做什么决策？如果答案是"什么都做不了"，要么改写要么删除
-   - 文章末尾需要有明确的"所以呢？"——对持有者、观望者分别给出操作指引
-
-5. **格式适配**
-   - 微信公众号排版友好：短段落、小标题清晰、表格简洁
-   - 加入适当的分隔线和引用格式
-   - 文章长度控制在1000-3000字（太长读者会跳出）
-
-**输出**：改写后的完整公众号文章。
-
----
-
-### Agent 6：读者评审（普通投资者视角）
-
-**定位**：以一个"关注价值投资、有基础财务知识、持有/关注该公司"的普通投资者身份审读文章。
-
-**评审维度**：
-
-1. **可读性（权重30%）**
-   - 读完全文需要几分钟？是否有想跳过的段落？
-   - 哪些地方看不懂或需要反复读？
-   - 节奏感如何？有没有"读累了"的感觉？
-
-2. **信息价值（权重30%）**
-   - 读完后，我对这家公司的理解是否加深了？
-   - 有没有"哦原来是这样"的瞬间？
-   - 和我在其他地方看到的分析相比，这篇有什么独到之处？
-   - 哪些信息是多余的、删掉也不影响理解？
-
-3. **可信度（权重20%）**
-   - 数据是否有来源？关键判断是否有依据？
-   - 是否呈现了正反两面？还是只在唱多/唱空？
-   - 有没有"这也太自信了"的判断让人不舒服？
-   - 四大师的引用是否恰当、有力？
-
-4. **行动指导性（权重20%）**
-   - 读完后我知道该怎么做吗？
-   - 对"持有者"和"观望者"的建议是否足够具体？
-   - 下一步该关注什么？（催化剂、时间节点）
-
-**输出格式**：
-
-```markdown
-## 读者评审报告
-
-### 总体评分：X/10
-
-### 优点（2-3条）
-读者视角下文章做得好的地方
-
-### 必须修改（硬伤）
-- 问题1：具体描述 → 建议修改方式
-- 问题2：...
-
-### 建议优化（锦上添花）
-- 建议1：...
-- 建议2：...
-
-### 读者最想知道但文章没回答的问题
-- 问题1
-- 问题2
-
-### 一句话总评
-```
-
----
-
-### Team Lead 定稿
-
-收到编辑改写稿和读者评审报告后：
-
-1. **处理读者评审的"必须修改"项**——逐条修改
-2. **选择性采纳"建议优化"项**——判断是否值得
-3. **补充"读者想知道但没回答的问题"**——如果有数据支撑就加上
-4. **最终通读**——确保修改后全文连贯、逻辑自洽
-
----
-
-## 输出文件
+Use English/latin folder names.
 
 ```
-reports/{公司名}/
-├── {公司名}-earnings-{期间}.md           ← 最终公众号文章（定稿）
-├── {公司名}-earnings-{期间}-研究底稿.md   ← 四大师合成研究报告（自用）
-├── {公司名}-earnings-{期间}-段永平.md     ← 生意本质解读
-├── {公司名}-earnings-{期间}-巴菲特.md     ← 财务质量审计
-├── {公司名}-earnings-{期间}-芒格.md       ← 竞争格局解读
-├── {公司名}-earnings-{期间}-李录.md       ← 风险信号分析
-└── {公司名}-earnings-{期间}-读者评审.md   ← 读者评审报告
+reports/{Company}/
+├── {Company}-earnings-{Period}.md              ← Final synthesized research report
+├── {Company}-earnings-{Period}-DuanYongping.md ← Reading of the business nature
+├── {Company}-earnings-{Period}-Buffett.md      ← Financial-quality audit
+├── {Company}-earnings-{Period}-Munger.md       ← Reading of the competitive landscape
+└── {Company}-earnings-{Period}-LiLu.md         ← Risk-signal analysis
 ```
 
-## 数据抽检（准出流程）
+Example: `reports/Petrobras/Petrobras-earnings-2025Q4.md`
 
-对最终文章执行抽检：
+## Data Spot-Check (Release Gate)
+
+Run the spot-check on the final report:
 
 ```bash
 python3 tools/report_audit.py extract \
-  --report reports/{公司名}/{公司名}-earnings-{期间}.md
+  --report reports/{Company}/{Company}-earnings-{Period}.md
 
 python3 tools/report_audit.py verdict \
-  --results '<填好的JSON>' \
-  --report {报告文件名}
+  --results '<completed JSON>' \
+  --report {report filename}
 ```
 
-**【准出】** 全部通过 → 可发布；**【打回】** 有不通过 → 修正后重审。
+**[PASS]** all items pass → releasable; **[RETURN]** any item fails → fix and re-audit.
 
-## 与现有 Skill 的关系
+## Relationship to Other Skills
 
-| Skill | 定位 | 何时用 |
-|-------|------|--------|
-| `/earnings-review` | 单Agent财报精读 | 快速过一遍，只需一个视角 |
-| **`/earnings-team`（本Skill）** | **六Agent团队精读 + 公众号发布** | **重要公司的关键财报，需要深度+发布** |
-| `/investment-team` | 四Agent全面公司研究 | 首次研究一家公司 |
+| Skill | Positioning | When to Use |
+|-------|-------------|-------------|
+| `/earnings-review` | Single-Agent deep earnings review | A quick pass from a single perspective |
+| **`/earnings-team` (this Skill)** | **Four-Agent team deep read + synthesized report** | **Key filings for important companies, when depth is needed** |
+| `/investment-team` | Four-Agent full company research | First time researching a company |
 
-## 关键原则
+## Key Principles
 
-- **读原文，不读摘要**：尽一切可能获取一手资料
-- **四个视角不是四个部门**：必须相互印证和挑战，不是各说各话
-- **Team Lead 的价值在于综合判断**：找交集和矛盾点，不是拼报告
-- **结论要明确**：不允许"总体来看基本符合预期但也有一些值得关注的点"
-- **反面检验贯穿全程**：每个积极发现都附带反面论据
-- **编辑不是降低专业度**：是让专业内容更易读，不是变成科普
-- **读者评审不是走过场**：真的站在读者角度挑毛病
-- **数据准确性**：关键数据交叉验证，使用 financial_rigor.py 工具验算
+- **Read the original, not the summary**: obtain primary sources by every means possible.
+- **Four perspectives, not four departments**: they must cross-check and challenge each other, not each speak in isolation.
+- **The Team Lead's value is integrated judgment**: find the intersections and the contradictions, not a staple job.
+- **Conclusions must be clear**: no "overall broadly in line but with a few points worth watching".
+- **Contrarian testing throughout**: every positive finding comes with counter-evidence.
+- **Objectivity**: separate fact from opinion; present both sides; be honest about uncertainty; cite sources (at least 2 for key data); use ★ ratings (1-5, no half-stars). All output reports are written in English.
+- **Data accuracy**: cross-validate key figures and verify the arithmetic with `tools/financial_rigor.py`.

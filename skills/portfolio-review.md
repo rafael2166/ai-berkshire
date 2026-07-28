@@ -1,190 +1,190 @@
-# 组合管理：从"研究公司"到"管理组合"
+# Portfolio Management: From "Researching Companies" to "Managing a Portfolio"
 
-对 $ARGUMENTS 执行投资组合审视与优化。
+Perform a portfolio review and optimization for $ARGUMENTS.
 
-**支持输入格式**：
-- 持仓清单，例如：`腾讯30%, 美团20%, 茅台20%, 英伟达15%, 现金15%`
-- 或：`腾讯 500股 @480港元, 美团 1000股 @130港元, ...`
-- 或：`我的持仓`（如果已有保存的组合文件 `reports/portfolio-latest.md`）
+**Supported input formats**:
+- Holdings list, e.g.: `PETR4 30%, VALE3 20%, ITUB4 20%, WEGE3 15%, cash 15%`
+- Or: `PETR4 500 shares @ R$38, VALE3 1000 shares @ R$62, ...`
+- Or: `my holdings` (if a saved portfolio file `reports/portfolio-latest.md` already exists)
 
-> "分散投资是对无知的保护。如果你知道自己在做什么，分散投资就没有意义。" —— 巴菲特
+> "Diversification is protection against ignorance. It makes little sense if you know what you are doing." — Warren Buffett
 >
-> "我这辈子见过的真正好的投资机会，十个手指就数得完。" —— 李录
+> "In my whole life, the truly great investment opportunities I've seen can be counted on ten fingers." — Li Lu
 
-## 设计理念
+## Design Philosophy
 
-研究公司只是投资的一半。另一半是**组合层面的决策**：
-- 买多少？（仓位）
-- 用什么钱买？（资金来源——新钱还是换仓）
-- 和已有持仓是否冲突？（相关性）
-- 最优组合长什么样？（机会成本）
+Researching companies is only half of investing. The other half is **portfolio-level decisions**:
+- How much to buy? (position size)
+- With what money? (funding source — new money or a switch)
+- Does it conflict with existing holdings? (correlation)
+- What does the optimal portfolio look like? (opportunity cost)
 
-巴菲特从不孤立地看一只股票——他总是在想"这是不是我能做的最好的事？"
+Buffett never looks at a stock in isolation — he is always asking, "Is this the best thing I can do?"
 
-## 执行流程
+## Execution Flow
 
-### 第一步：解析持仓
+### Step 1: Parse Holdings
 
-从输入中解析出当前持仓，标准化为以下格式：
+Parse the current holdings from the input and standardize into the following format:
 
-| 标的 | 代码 | 持仓量 | 成本价 | 现价 | 市值 | 占比 | 盈亏 |
+| Name | Ticker | Quantity | Cost | Current price | Market value | Weight | P&L |
 |------|------|--------|-------|------|------|------|------|
 
-如果输入只有比例没有金额，按比例分析即可。
+If the input only has percentages and no amounts, analyze by percentage.
 
-同时检查是否存在已有的组合文件（`reports/portfolio-latest.md`），如有则读取并更新。
+Also check whether an existing portfolio file (`reports/portfolio-latest.md`) exists; if so, read and update it.
 
-### 第二步：获取最新数据
+### Step 2: Get the Latest Data
 
-使用 Task 工具启动后台 Agent，通过 WebSearch 为每个持仓并行获取：
-1. 当前股价和估值指标（PE、PB、股息率）
-2. 最近一个季度的关键财务变化
-3. 近期重大事件
-4. 分析师一致预期（前瞻PE、目标价）
+Use the Task tool to launch background agents to fetch the following in parallel for each holding — prefer the connected MCP market-data tools (market-data server + finnhub); supplement with WebSearch/WebFetch:
+1. Current price and valuation metrics (P/E, P/B, dividend yield). State currency explicitly (BRL for B3 shares, USD for ADRs)
+2. Key financial changes in the most recent quarter
+3. Recent major events
+4. Analyst consensus (forward P/E, target price)
 
-对每个持仓使用 `tools/financial_rigor.py verify-valuation` 校验估值数据。对每只持仓标注信息丰富度（A/B/C级），C级持仓的分析结论标注低置信度。
+For each holding, use `tools/financial_rigor.py verify-valuation` to check valuation data. Tag each holding's information richness (A/B/C); mark C-grade holdings' conclusions as low confidence.
 
-### 第三步：单仓位体检
+### Step 3: Single-Position Health Check
 
-对每个持仓进行快速健康检查：
+Do a quick health check on each holding:
 
-| 标的 | 当前PE | 买入逻辑是否变化 | 论文健康度 | 仓位建议 |
+| Name | Current P/E | Has the buy thesis changed? | Thesis health | Position advice |
 |------|:------:|:--------------:|:---------:|---------|
-| 腾讯 | 18x | 未变化 | 8/10 | 合理 |
-| 美团 | 25x | 竞争加剧 | 6/10 | 偏高，考虑减仓 |
+| ITUB4 | 8x | Unchanged | 8/10 | Reasonable |
+| WEGE3 | 32x | Competition intensifying | 6/10 | High, consider trimming |
 
-对每个持仓回答：
-- [ ] **如果今天没有持仓，你还会在当前价格买入吗？**
-- [ ] **如果明天不能交易，持有5年你舒服吗？**
-- [ ] **买入论文还完整吗？**
+For each holding, answer:
+- [ ] **If you didn't already own it, would you buy at the current price today?**
+- [ ] **If you couldn't trade for 5 years, would you be comfortable holding it?**
+- [ ] **Is the buy thesis still intact?**
 
-**段永平**："如果你不想持有一只股票10年，那就一天也不要持有。"
+**Duan Yongping**: "If you don't want to hold a stock for 10 years, don't hold it for even one day."
 
-### 第四步：组合层面分析
+### Step 4: Portfolio-Level Analysis
 
-#### 4.1 集中度分析
+#### 4.1 Concentration Analysis
 
-| 指标 | 当前值 | 建议范围 | 判断 |
+| Metric | Current value | Suggested range | Assessment |
 |------|-------|---------|------|
-| 第一大持仓占比 | | <40% | |
-| 前三大持仓占比 | | 50-80% | |
-| 总持仓数量 | | 5-15只 | |
-| 现金占比 | | 10-30%（视市场环境） | |
+| Largest holding weight | | <40% | |
+| Top three holdings weight | | 50-80% | |
+| Total number of holdings | | 5-15 | |
+| Cash weight | | 10-30% (depending on market conditions) | |
 
-**李录的标准**：3-5只核心持仓，前3占80%+。**但这要求每一只都研究透彻。**
+**Li Lu's standard**: 3-5 core holdings, top 3 make up 80%+. **But this requires that each one be thoroughly researched.**
 
-**巴菲特的标准**：核心持仓不超过10只，但允许更多卫星仓位。
+**Buffett's standard**: no more than 10 core holdings, but more satellite positions are allowed.
 
-#### 4.2 相关性检查
+#### 4.2 Correlation Check
 
-识别持仓之间的隐性关联：
+Identify hidden linkages between holdings:
 
-| 持仓A | 持仓B | 相关类型 | 风险 |
+| Holding A | Holding B | Correlation type | Risk |
 |-------|-------|---------|------|
-| 腾讯 | 快手 | 同属中国互联网 | 监管风险共振 |
-| 英伟达 | 台积电 | AI供应链上下游 | AI Capex同向波动 |
-| 美团 | 拼多多 | 同属中国消费 | 宏观消费同向波动 |
+| PETR4 | PRIO3 | Both Brazilian oil & gas | Oil-price and ANP/fuel-policy resonance |
+| VALE3 | CSNA3 | Iron-ore up/downstream | China demand and iron-ore price swings |
+| ITUB4 | BBAS3 | Both Brazilian banks | Selic/credit-cycle and regulatory resonance |
 
-**检查清单**：
-- [ ] 是否有超过50%的仓位暴露在同一个主题/行业？
-- [ ] 是否有超过50%的仓位暴露在同一个国家/货币？
-- [ ] 如果中美关系恶化，组合会亏多少？
-- [ ] 如果全球经济衰退，组合会亏多少？
+**Checklist**:
+- [ ] Is more than 50% of the portfolio exposed to a single theme/industry?
+- [ ] Is more than 50% of the portfolio exposed to a single country/currency?
+- [ ] If the BRL weakens sharply, how much does the portfolio lose (or gain via commodity/ADR exposure)?
+- [ ] If there is a global recession, how much does the portfolio lose?
 
-#### 4.3 机会成本分析
+#### 4.3 Opportunity-Cost Analysis
 
-这是巴菲特最核心的思维方式——**每一块钱都应该放在回报最高的地方**。
+This is Buffett's most central way of thinking — **every dollar should sit where its return is highest.**
 
-将所有持仓按"预期年化回报"排序：
+Rank all holdings by "expected annualized return":
 
-| 排名 | 标的 | 当前占比 | 预期年化回报 | 确定性 | 预期回报×确定性 |
+| Rank | Name | Current weight | Expected annualized return | Certainty | Expected return × certainty |
 |:----:|------|:-------:|:----------:|:------:|:--------------:|
 | 1 | | | | | |
 | 2 | | | | | |
 | ... | | | | | |
 
-预期回报估算方法（使用 `tools/financial_rigor.py three-scenario` 计算）：
-- **简化公式**：预期年化 ≈ FCF Yield + 预期增速（主要方法）
-- **价值型验证**：安全边际回归 + 利润增速 + 股息率
-- **成长型验证**：利润增速 × 合理PE的变化
+Expected-return estimation method (compute with `tools/financial_rigor.py three-scenario`):
+- **Simplified formula**: expected annualized ≈ FCF yield + expected growth (primary method)
+- **Value-style check**: reversion of margin of safety + earnings growth + dividend yield
+- **Growth-style check**: earnings growth × change in a reasonable P/E
 
-**关键问题**：排名最后的持仓，预期回报是否高于现金（无风险利率~4%）？如果不是，应该卖出换成现金。
+**Key question**: For the lowest-ranked holding, is the expected return higher than cash? Note the Brazilian context: the risk-free rate is the Selic rate (currently well above US rates — check the current level), so the cash hurdle is high. If a holding can't beat it, consider selling into cash.
 
-#### 4.4 压力测试
+#### 4.4 Stress Test
 
-| 情景 | 假设 | 组合预计影响 | 最大回撤 |
+| Scenario | Assumption | Estimated portfolio impact | Max drawdown |
 |------|------|-----------|---------|
-| 全球衰退 | 企业盈利下降20-30% | | |
-| 中美冲突升级 | 中概股折价50% | | |
-| 利率飙升 | 10年期国债→6% | | |
-| 科技泡沫破裂 | 科技股PE压缩40% | | |
+| Global recession | Corporate earnings down 20-30% | | |
+| Commodity crash | Iron ore / oil down 30-40% | | |
+| Selic spike / fiscal stress | Brazilian 10-year yield surges, BRL sells off | | |
+| Domestic-demand slump | Consumption and credit contract | | |
 
-对每个情景做定性+粗估评估（基于各持仓的行业属性和历史估值波动范围）：
-- 哪些持仓受冲击最大？大致影响方向和量级范围
-- 组合整体是否能承受？
-- 是否需要对冲？
+For each scenario, do a qualitative + rough quantitative assessment (based on each holding's sector attributes and historical valuation-swing range):
+- Which holdings are hit hardest? Approximate direction and magnitude range
+- Can the portfolio as a whole withstand it?
+- Is any hedge needed?
 
-### 第五步：优化建议
+### Step 5: Optimization Recommendations
 
-#### 5.1 调仓建议
+#### 5.1 Rebalancing Recommendations
 
-基于以上分析，给出具体的调仓建议：
+Based on the analysis above, give specific rebalancing recommendations:
 
-| 动作 | 标的 | 当前占比 | 建议占比 | 理由 |
+| Action | Name | Current weight | Suggested weight | Rationale |
 |------|------|:-------:|:-------:|------|
-| 加仓 | | | | |
-| 减仓 | | | | |
-| 清仓 | | | | |
-| 新建仓 | | | | |
-| 不动 | | | | |
+| Add | | | | |
+| Trim | | | | |
+| Exit | | | | |
+| New position | | | | |
+| Hold | | | | |
 
-#### 5.2 寻找替代标的
+#### 5.2 Finding Alternative Candidates
 
-如果组合中有"不如现金"的仓位，或者现金占比过高，建议使用 `/industry-research` 或 `/investment-checklist` 对感兴趣的行业/公司进行系统筛选，而非在本Skill内直接推荐个股。
+If the portfolio has a position that is "worse than cash," or the cash weight is too high, use `/industry-research` or `/investment-checklist` to systematically screen industries/companies of interest, rather than directly recommending individual stocks within this skill.
 
-#### 5.3 现金管理
+#### 5.3 Cash Management
 
-| 当前现金占比 | 建议现金占比 | 理由 |
+| Current cash weight | Suggested cash weight | Rationale |
 |:----------:|:----------:|------|
 
-**巴菲特**：目前持有$3,820亿现金，占比超过总资产的25%——当找不到好机会时，现金是最好的仓位。
+**Buffett**: when he cannot find good opportunities, cash is the best position — he has repeatedly let cash build to a large share of assets rather than force a bad buy. In Brazil, cash held at the Selic rate earns a meaningful real yield, which raises the bar every holding must clear.
 
-### 第六步：输出组合报告
+### Step 6: Output the Portfolio Report
 
-#### 报告结构
+#### Report Structure
 
 ```
-一、组合概览（持仓表格+饼图描述）
-二、单仓位体检（每个持仓的健康状态）
-三、组合分析
-   - 集中度：是否过度分散/集中？
-   - 相关性：隐性关联和风险共振
-   - 机会成本：排名最低的仓位是否值得持有？
-   - 压力测试：极端情景下的回撤预估
-四、调仓建议（具体操作+理由）
-五、下次审视时间和关注重点
+1. Portfolio Overview (holdings table + pie-chart description)
+2. Single-Position Health Check (health status of each holding)
+3. Portfolio Analysis
+   - Concentration: over-diversified or over-concentrated?
+   - Correlation: hidden linkages and risk resonance
+   - Opportunity cost: is the lowest-ranked position worth holding?
+   - Stress test: estimated drawdown under extreme scenarios
+4. Rebalancing Recommendations (specific actions + rationale)
+5. Next review date and focus areas
 ```
 
-#### 结论必须明确回答
+#### The Conclusion Must Clearly Answer
 
-1. **组合整体健康度**：优秀 / 良好 / 需要调整 / 问题严重
-2. **最应该做的一件事是什么？**（加仓X / 减仓Y / 不动）
-3. **当前最大风险是什么？**
+1. **Overall portfolio health**: Excellent / Good / Needs adjustment / Serious problems
+2. **What is the single most important thing to do?** (Add X / Trim Y / Hold)
+3. **What is the biggest current risk?**
 
-### 第七步：保存组合文件
+### Step 7: Save the Portfolio File
 
-将组合信息写入 `reports/portfolio-latest.md`，包含：
-- 最新持仓表
-- 本次审视日期和结论
-- 调仓记录（追加）
-- 下次审视提醒
+Write the portfolio information to `reports/portfolio-latest.md`, including:
+- Latest holdings table
+- This review's date and conclusions
+- Rebalancing log (append)
+- Next-review reminder
 
 ---
 
-## 关键原则
+## Key Principles
 
-- **每一块钱都有机会成本** — 持有一只平庸的股票，成本是错过了一只优秀的
-- **集中不是风险，无知才是** — 持有3只你深度理解的股票，比持有30只你一知半解的安全
-- **现金是一种仓位** — 找不到好机会时，持有现金不丢人
-- **组合层面 > 个股层面** — 一只好股票在错误的仓位上也会拖累你
-- **定期审视，但不要过度交易** — 每季度审视一次足够，不要每天盯盘调仓
+- **Every dollar has an opportunity cost** — the cost of holding a mediocre stock is missing an excellent one
+- **Concentration isn't the risk; ignorance is** — holding 3 stocks you deeply understand is safer than 30 you barely know
+- **Cash is a position** — there's no shame in holding cash when you can't find good opportunities
+- **Portfolio level > single-stock level** — a good stock in the wrong position size will still drag you down
+- **Review regularly, but don't over-trade** — reviewing once a quarter is enough; don't watch the screen and rebalance daily

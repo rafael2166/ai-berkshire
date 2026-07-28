@@ -1,112 +1,112 @@
-# AI Berkshire — 项目指令
+# AI Berkshire (Brazil Edition) — Project Instructions
 
-## 项目概述
+## Overview
 
-基于 Claude Code 的价值投资研究 Skill 合集。四大师框架：巴菲特、芒格、段永平、李录。
-GitHub: xbtlin/ai-berkshire
+A collection of value-investing research Skills for Claude Code, adapted for the **Brazilian stock market (B3)**. Built on a four-master framework: **Warren Buffett, Charlie Munger, Duan Yongping, Li Lu**.
 
-## 项目结构
+Primary market: **Brazil / B3** (BRL). US-listed companies and ADRs are supported as a secondary case (SEC filings).
+
+## Project Structure
 
 ```
-skills/          — 投研 Skill 定义（.md），复制到 ~/.claude/commands/ 使用
-tools/           — 辅助工具（financial_rigor.py 精确计算、twstock_data.py 台股FinMind取数）
-reports/         — 投资研究报告输出
-assets/          — 图片等静态资源
+skills/    — investment-research Skill definitions (.md); copy to ~/.claude/commands/ to use
+tools/     — helper scripts (financial_rigor.py for precise math, report_audit.py for QA, etc.)
+reports/   — research report output (organized by company)
 ```
 
-## 报告目录结构
+## Data Sources (Brazil primary)
 
-所有报告按**公司名**建文件夹，公司相关的所有报告放在对应文件夹内：
+- **Filings & disclosures:** CVM (Comissão de Valores Mobiliários) via the RAD portal (www.rad.cvm.gov.br); company IR ("Relações com Investidores") sites; B3 (www.b3.com.br).
+- **Market data:** the connected MCP market-data tools (a market-data server and finnhub) are the preferred source for prices, quotes, and fundamentals — do NOT use web scraping for market data. Supplement with WebSearch / WebFetch for news and primary documents.
+- **US-listed / ADRs (secondary):** SEC EDGAR for filings.
+- **Regulators to watch (for news/regulatory analysis):** CVM (securities), CADE (antitrust), BACEN (banking/monetary), sector agencies (ANP oil & gas, ANEEL electricity, ANATEL telecom, ANS health).
+
+## Report Directory Structure
+
+All reports live under a per-**company** folder (English/latin folder names):
 
 ```
 reports/
-├── AI产业研究/              — AI产业链全景研究（置顶）
-│   ├── AI五层蛋糕-产业全景研究-20260605.md
-│   └── AI五层蛋糕-公众号-20260605.md
-├── 腾讯/                    — 腾讯所有研究报告
-│   ├── 腾讯-research-20260408.md
-│   ├── 腾讯-earnings-2025Q4.md
-│   ├── 腾讯-management-20260409.md
-│   └── 腾讯-thesis.md
-├── 拼多多/                  — 拼多多所有研究报告
-├── 泡泡玛特/                — 泡泡玛特所有研究报告
-├── 核电-industry-20260409.md — 行业报告放根目录
-├── AI算力-funnel-20260509.md  — 漏斗筛选报告放根目录
-├── AI-轮动判断-20260509.md    — 主题级综合判断报告放根目录
-├── portfolio-latest.md       — 组合报告放根目录
-└── 多公司对比-checklist-20260408.md — 多公司报告放根目录
+├── Petrobras/                 — all Petrobras reports
+│   ├── Petrobras-research-20260728.md
+│   ├── Petrobras-earnings-2026Q2.md
+│   ├── Petrobras-management-20260728.md
+│   └── Petrobras-thesis.md
+├── Vale/                      — all Vale reports
+├── Itau/                      — all Itaú reports
+├── {Industry}-industry-{YYYYMMDD}.md    — industry reports at root
+├── {Industry}-funnel-{YYYYMMDD}.md      — funnel-screen reports at root
+├── portfolio-latest.md                  — portfolio report at root (continuously updated)
+└── {Company}-comparison-checklist-{YYYYMMDD}.md — multi-company reports at root
 ```
 
-## 报告命名规范
+## Report Naming Conventions
 
-| Skill | 文件命名格式 | 示例 |
+| Skill | Filename format | Example |
 |------|---------|------|
-| /investment-team | `{公司名}/` 目录内含4个视角+最终报告 | `reports/拼多多/最终报告.md` |
-| /investment-research | `{公司名}-research-{YYYYMMDD}.md` | `reports/腾讯/腾讯-research-20260408.md` |
-| /investment-checklist | `{公司名}-checklist-{YYYYMMDD}.md` | `reports/腾讯/腾讯-checklist-20260408.md` |
-| /industry-research | `{行业名}-industry-{YYYYMMDD}.md`（根目录） | `reports/核电-industry-20260409.md` |
-| /industry-funnel | `{行业名}-funnel-{YYYYMMDD}.md`（根目录） | `reports/AI算力-funnel-20260509.md` |
-| /private-company-research | `{公司名}-private-{YYYYMMDD}.md` | `reports/字节跳动/字节跳动-private-20260408.md` |
-| /earnings-review | `{公司名}-earnings-{期间}.md` | `reports/腾讯/腾讯-earnings-2025Q4.md` |
-| /earnings-team | `{公司名}/` 目录内含4个大师视角+研究底稿+公众号文章+读者评审 | `reports/腾讯/腾讯-earnings-2025Q4.md`（公众号定稿） |
-| /thesis-tracker | `{公司名}-thesis.md`（长期维护） | `reports/腾讯/腾讯-thesis.md` |
-| /portfolio-review | `portfolio-latest.md`（根目录，持续更新） | `reports/portfolio-latest.md` |
-| /management-deep-dive | `{公司名}-management-{YYYYMMDD}.md` | `reports/腾讯/腾讯-management-20260409.md` |
+| /investment-team | `{Company}/` folder with 4 perspectives + final report | `reports/Petrobras/final-report.md` |
+| /investment-research | `{Company}-research-{YYYYMMDD}.md` | `reports/Vale/Vale-research-20260728.md` |
+| /investment-checklist | `{Company}-checklist-{YYYYMMDD}.md` | `reports/Vale/Vale-checklist-20260728.md` |
+| /industry-research | `{Industry}-industry-{YYYYMMDD}.md` (root) | `reports/mining-industry-20260728.md` |
+| /industry-funnel | `{Industry}-funnel-{YYYYMMDD}.md` (root) | `reports/banking-funnel-20260728.md` |
+| /private-company-research | `{Company}-private-{YYYYMMDD}.md` | `reports/Nubank/Nubank-private-20260728.md` |
+| /earnings-review | `{Company}-earnings-{period}.md` | `reports/Vale/Vale-earnings-2026Q2.md` |
+| /earnings-team | `{Company}/` folder: 4 master perspectives + research draft + final report | `reports/Vale/Vale-earnings-2026Q2.md` |
+| /thesis-tracker | `{Company}-thesis.md` (long-lived) | `reports/Vale/Vale-thesis.md` |
+| /portfolio-review | `portfolio-latest.md` (root, continuously updated) | `reports/portfolio-latest.md` |
+| /management-deep-dive | `{Company}-management-{YYYYMMDD}.md` | `reports/Vale/Vale-management-20260728.md` |
+| /news-pulse | `{Company}-news-{YYYYMMDD}.md` | `reports/Vale/Vale-news-20260728.md` |
 
-## /investment-team 文件结构
+## /investment-team File Structure
 
 ```
-reports/{公司名}/
-├── README.md                         — 研究框架概览+核心结论
-├── 01-商业模式分析-段永平视角.md
-├── 02-财务估值分析-巴菲特视角.md
-├── 03-行业竞争分析-芒格视角.md
-├── 04-风险管理层评估-李录视角.md
-└── 最终报告.md                       — Team Lead 综合报告
+reports/{Company}/
+├── README.md                              — research-framework overview + core conclusions
+├── 01-business-model-duan-yongping.md
+├── 02-financials-valuation-buffett.md
+├── 03-industry-competition-munger.md
+├── 04-risk-management-li-lu.md
+└── final-report.md                        — Team Lead synthesized report
 ```
 
-## 投研分析核心原则（最高优先级）
+## Core Analytical Principles (Highest Priority)
 
-- **客观、客观、客观**——所有投研分析必须基于事实和数据，严禁主观臆断
-- 严格区分"事实"与"观点"：事实用数据支撑，观点必须明确标注为"观点"或"推测"
-- **不预设立场**：不预设看多或看空，先摆数据、再推逻辑、最后得结论。结论必须从数据中自然推出
-- 禁止使用"我认为"、"我觉得"、"显然"等主观表述，改用"数据显示"、"证据表明"、"根据XX来源"
-- **呈现正反两面**：每个核心判断都必须附带反面论据（"但另一方面..."），让读者自己权衡
-- 对不确定的事情诚实说"不确定"或"数据不足"，不要用推测填充确定性
-- 所有skill（investment-team、investment-research、earnings-review等）在执行时都必须遵守以上原则
+- **Objectivity above all** — every judgment must rest on facts and data; no unsupported assertions.
+- Strictly separate **fact** from **opinion**: back facts with data; explicitly label opinions as "opinion" or "speculation."
+- **No preset stance**: don't start bullish or bearish. Lay out the data, then the logic, then the conclusion. Conclusions must follow naturally from the data.
+- Avoid subjective phrasing ("I think", "obviously"). Use "the data shows", "the evidence indicates", "according to {source}".
+- **Present both sides**: every core judgment must carry a counter-argument ("but on the other hand…") so the reader can weigh it.
+- Be honest about uncertainty — say "uncertain" or "insufficient data" rather than filling gaps with speculation.
+- Every Skill must follow these principles when it runs.
 
-## 报告语言与风格
+## Report Language & Style
 
-- 所有报告使用**中文**
-- 风格：直接、犀利、不说废话
-- 数据必须标注来源，关键数据至少2个来源交叉验证
-- 估计值必须注明"估计"
-- 评分使用★符号（★1-5），不含半星
-- 穿插巴菲特/芒格/段永平/李录的语录点评
+- **All output is in English** — reports, section headers, commit messages, filenames. This overrides any Chinese scaffolding that may remain in a skill template; the output language is always English.
+- Style: direct, sharp, no filler.
+- Cite a source for every data point; cross-verify key figures with ≥2 independent sources.
+- Label estimates as "estimate".
+- Ratings use ★ (1–5, no half-stars).
+- Weave in Buffett / Munger / Duan Yongping / Li Lu commentary where it adds insight.
 
-## GitHub 操作
+## Data-Integrity Notes
 
-- 本地克隆路径：`~/ai-berkshire/`
-- 远程仓库：`https://github.com/xbtlin/ai-berkshire.git`
-- 推送前先 `git pull --rebase origin main`（远程经常有新提交）
-- commit message 用中文，描述清楚改了什么
-- 不要推送中间过程文件（如 data_collection.md），只推最终报告
+- Verify market cap by hand: share price × shares outstanding, then compare to the reported figure.
+- State the currency explicitly (BRL / USD) to avoid mix-ups, especially for companies with both B3 shares and US ADRs.
+- Compute PE / ROE and similar ratios precisely with `tools/financial_rigor.py`.
+- Prefer the connected MCP market-data tools over any scraping for prices/fundamentals.
+- After writing a report, ask whether to push it to GitHub.
 
-## 常用命令
+## GitHub Workflow
+
+- Remote `origin` → this fork: `https://github.com/rafael2166/ai-berkshire.git`
+- Remote `upstream` → original project: `https://github.com/xbtlin/ai-berkshire.git` (pull updates with `git pull upstream main` if desired)
+- **Commit messages in English**, clearly describing what changed.
+- Don't push intermediate working files — push only the final report.
 
 ```bash
-# 推送报告到GitHub
-cd ~/ai-berkshire
-git add reports/xxx.md
-git commit -m "添加xxx报告"
-git pull --rebase origin main
+# push a report to your fork
+cd ~/Documents/Projects/Research/ai-berkshire
+git add reports/{Company}/{report}.md
+git commit -m "Add {Company} {report-type} report"
 git push origin main
 ```
-
-## 注意事项
-
-- 市值必须手算校验：股价 × 总股本，与报告市值对比
-- 货币单位要明确（港币/人民币/美元/新台币），防止混淆
-- PE/ROE等指标用 tools/financial_rigor.py 精确计算
-- 台股数据用 tools/twstock_data.py（FinMind）获取，并按 skills/financial-data.md 台股章节交叉验证
-- 报告写完后主动询问是否推送到GitHub

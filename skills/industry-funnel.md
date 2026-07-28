@@ -1,305 +1,308 @@
-# 行业漏斗筛选：从全市场到 3 家的价值投资精选流程
+# Industry Funnel Screening: A Value-Investing Selection Process from the Whole Market to 3 Names
 
-对 $ARGUMENTS 行业/方向执行漏斗式价值投资筛选，从全市场扫描逐层精选到 3 家终选标的。
+Run a funnel-style value-investing screen on the $ARGUMENTS industry / theme, narrowing from a whole-market scan down to 3 final names, layer by layer.
 
-## 适用场景
+## When to Use
 
-当你说出一个行业或投资方向（如"AI 算力"、"创新药"、"机器人"），想要：
-1. 不遗漏任何重要标的（含 A 股、港股、美股、未上市候选）
-2. 用统一标准过滤掉"故事股"和质量不足的公司
-3. 把精力聚焦到真正值得深度研究的 3 家头部
-4. 每层有明确的留/弃标准，可复盘可追溯
+When you name an industry or investment theme (e.g., "AI compute", "innovative drugs", "robotics") and want to:
+1. Miss no important target (including B3 / Brazil, US-listed, and private IPO candidates)
+2. Use a uniform standard to filter out "story stocks" and companies of insufficient quality
+3. Focus your energy on the 3 leaders truly worth deep research
+4. Have clear keep/discard criteria at each layer, so the process is reviewable and traceable
 
-与 `industry-research` 的区别：
-- `industry-research` 偏重产业链结构与全景，环节切片
-- `industry-funnel` 偏重个股筛选漏斗，从全市场逐层精选到 3 家
+Difference from `industry-research`:
+- `industry-research` emphasizes value-chain structure and panorama, slicing by segment
+- `industry-funnel` emphasizes the stock-selection funnel, narrowing from the whole market to 3 names layer by layer
 
-两者可以互补：先用 `industry-research` 看清产业链格局，再用 `industry-funnel` 精选标的。
+The two are complementary: first use `industry-research` to understand the value-chain landscape, then use `industry-funnel` to select targets.
 
 ---
 
-## 漏斗结构总览
+## Funnel Structure Overview
 
 ```
-第一层：全市场扫描     30-60 家   （活跃度+涨幅+市值前 30 的并集）
-        ↓ 价值投资 5 条硬指标
-第二层：粗筛             ≤ 10 家   （5 条全部及格 + 护城河 ★★★ 以上）
-        ↓ 精细分析
-第三层：精细分析          ≤ 10 家  （每家 300-500 字结构化分析）
-        ↓ 终选
-第四层：四大师深度分析     3 家     （每家 800-1200 字，巴芒段李四视角）
+Layer 1: whole-market scan     30-60 names   (union of activity + gainers + top 30 by market cap)
+        ↓ 5 hard value-investing metrics
+Layer 2: coarse screen         ≤ 10 names    (all 5 metrics pass + moat ★★★ or above)
+        ↓ detailed analysis
+Layer 3: detailed analysis     ≤ 10 names    (300-500 words of structured analysis each)
+        ↓ final selection
+Layer 4: four-masters deep dive  3 names      (800-1200 words each, Buffett-Munger-Duan-Li views)
         ↓
-输出：投资建议 + 操作信号 + 仓位建议
+Output: investment recommendation + trade signals + position sizing
 ```
 
-每层"过滤掉的标的"必须留下淘汰理由，不能黑箱。
+Every "filtered-out target" at each layer must have a documented reason for elimination — no black box.
 
 ---
 
-## 第一步：全市场扫描入口
+## Step 1: Whole-Market Scan Entry
 
-### 1.1 活跃股票定义（三类并集）
+### 1.1 Active-Stock Definition (union of three categories)
 
-**A 类 - 成交活跃度**：
-- 近 30 天日均成交额排名行业前列（A 股/港股/美股各自取前 30）
+**Category A - Trading Activity**:
+- Top-ranked by 30-day average daily turnover within the industry (take the top 30 each for B3 / Brazil and US markets)
 
-**B 类 - 涨幅榜**：
-- 近 30 天涨幅前 20
-- 近 90 天涨幅前 20
-- 两者并集
+**Category B - Gainers List**:
+- Top 20 by 30-day price gain
+- Top 20 by 90-day price gain
+- The union of the two
 
-**C 类 - 市值锚定**：
-- 行业内市值前 30（无论涨跌）
+**Category C - Market-Cap Anchor**:
+- Top 30 by market cap within the industry (regardless of price move)
 
-最终扫描池 = A ∪ B ∪ C，预期 30-60 家。
+Final scan pool = A ∪ B ∪ C, expected 30-60 names.
 
-### 1.2 必须搜索的市场
+### 1.2 Markets That Must Be Searched
 
-| 市场 | 来源建议 |
-|------|---------|
-| A 股（沪深） | 同花顺/东方财富行业板块、通达信 |
-| 港股 | 富途/同花顺港股、HKEX 行业分类 |
-| 美股 | NASDAQ/NYSE 行业 ETF 持仓、Yahoo Finance |
-| 国际市场 | 日韩台欧的相关公司不能漏（特别是半导体、电子） |
-| 未上市公司 | 单列"未来 IPO 候选"小节，注明最新估值与潜在 IPO 时间 |
+| Market | Suggested Sources |
+|--------|-------------------|
+| B3 (Brazil) | B3 sector indices / listings, company RI (Investor Relations) sites |
+| US-listed | NYSE / NASDAQ sector ETF holdings, including Brazilian ADRs |
+| International markets | Do not miss relevant companies in Europe, Japan, and the rest of Latin America (especially in mining, oil & gas, and agribusiness supply chains) |
+| Private companies | List a separate "future IPO candidates" subsection, noting latest valuation and potential IPO timing |
 
-### 1.3 输出格式
+Prefer the analyst's MCP market-data tools (market-data server + finnhub) plus WebSearch / WebFetch for this data.
 
-| 公司名 | 代码 | 市场 | 市值 | 主业一句话 | 该行业占比 | 入选类别(A/B/C) |
-|-------|------|-----|------|----------|-----------|----------------|
+### 1.3 Output Format
 
-**关键自查**：
-- 行业占比 < 30% 的"沾边股"要谨慎，标注"非纯正标的"
-- 中国/亚洲市场不要因英文资料少而漏掉
-- 小市值公司不要因为 AI 偏好龙头而漏
+| Company | Ticker | Market | Market Cap | One-Line Core Business | Industry Exposure % | Selection Category (A/B/C) |
+|---------|--------|--------|------------|------------------------|---------------------|----------------------------|
 
----
-
-## 第二步：价值投资 5 条硬指标粗筛 → ≤ 10 家
-
-对第一步的 30-60 家公司，逐家应用 5 条硬指标。
-
-### 2.1 5 条硬指标
-
-| # | 指标 | 通过标准 | 放宽条件 | 数据来源 |
-|---|------|---------|---------|---------|
-| 1 | PE 估值 | 合理（与历史区间、同业对比） | 高成长可放宽到 PEG < 1.5 | 财报+wind/同花顺 |
-| 2 | ROE | > 15% 或近 3 年趋势改善 | 重资产行业可放宽 | 财报 |
-| 3 | 经营现金流 | 为正且占净利润 > 70% | — | 财报 |
-| 4 | 资产负债率 | < 60% | 公用事业/电力可放宽至 70% | 财报 |
-| 5 | 护城河快评 | ★★★ 以上 | — | 定性判断 |
-
-**护城河 5 类**：
-- 品牌/定价权
-- 转换成本/用户黏性
-- 网络效应
-- 规模效应
-- 技术/牌照/资源壁垒
-
-### 2.2 输出格式
-
-| 公司 | PE | ROE | 现金流/净利 | 负债率 | 护城河 | 综合 | 留/弃 | 淘汰理由 |
-|------|----|----|-----------|-------|-------|------|------|---------|
-
-**保留规则**：
-- 5 条全部及格 → 直接保留
-- 4 条及格 + 1 条接近 → 保留但标黄
-- 不足 4 条 → 淘汰，注明理由
-
-**目标**：保留 ≤ 10 家。如果保留过多（> 12），把护城河标准提到 ★★★★ 再筛一次。
+**Key self-check**:
+- Be cautious with "tangential" names whose industry exposure is < 30%; flag them "not a pure play"
+- Don't miss Brazilian / Latin American names just because there is less English-language material
+- Don't miss small-caps just because AI prefers leaders
 
 ---
 
-## 第三步：精细分析（≤ 10 家，每家 300-500 字）
+## Step 2: 5 Hard Value-Investing Metrics — Coarse Screen → ≤ 10 Names
 
-对粗筛保留的公司，逐家做结构化分析。
+Apply the 5 hard metrics to each of the 30-60 companies from Step 1.
 
-### 3.1 每家公司分析模板
+### 2.1 The 5 Hard Metrics
+
+| # | Metric | Pass Threshold | Relaxation Condition | Data Source |
+|---|--------|----------------|----------------------|-------------|
+| 1 | P/E valuation | Reasonable (vs. historical range and peers) | High growth may relax to PEG < 1.5 | Filings + market data |
+| 2 | ROE | > 15% or improving 3-year trend | Capital-intensive industries may relax | Filings |
+| 3 | Operating cash flow | Positive and > 70% of net income | — | Filings |
+| 4 | Debt-to-assets | < 60% | Utilities / power may relax to 70% | Filings |
+| 5 | Quick moat read | ★★★ or above | — | Qualitative judgment |
+
+Filings are sourced from CVM via the RAD portal (www.rad.cvm.gov.br) and company RI sites (and SEC for US-listed ADRs). Market data via B3.
+
+**The 5 moat types**:
+- Brand / pricing power
+- Switching costs / user stickiness
+- Network effects
+- Economies of scale
+- Technology / license / resource barriers
+
+### 2.2 Output Format
+
+| Company | P/E | ROE | Cash Flow / Net Income | Debt Ratio | Moat | Overall | Keep/Discard | Elimination Reason |
+|---------|-----|-----|------------------------|------------|------|---------|--------------|--------------------|
+
+**Retention rules**:
+- All 5 metrics pass → keep directly
+- 4 pass + 1 close → keep but flag yellow
+- Fewer than 4 pass → eliminate, note the reason
+
+**Target**: keep ≤ 10 names. If too many are kept (> 12), raise the moat standard to ★★★★ and screen once more.
+
+---
+
+## Step 3: Detailed Analysis (≤ 10 names, 300-500 words each)
+
+For the companies kept after the coarse screen, do a structured analysis of each.
+
+### 3.1 Per-Company Analysis Template
 
 ```
-## {公司名}（{代码}）
+## {Company} ({Ticker})
 
-**一句话商业模式**：
-（卖什么、卖给谁、怎么收钱）
+**One-line business model**:
+(what it sells, to whom, how it makes money)
 
-**财务质量**：
-- 收入增速 / 利润增速 / 毛利率 / ROE / 现金流
-- 关键变化（近 1-2 年最重要的财务转折点）
+**Financial quality**:
+- Revenue growth / profit growth / gross margin / ROE / cash flow
+- Key change (the most important financial turning point of the last 1-2 years)
 
-**护城河深度**：
-- 主要护城河类型 + 具体证据
-- 护城河 5 年后是否还在的简要判断
+**Moat depth**:
+- Primary moat type + specific evidence
+- Brief judgment on whether the moat will still exist in 5 years
 
-**主要风险（前 3）**：
+**Main risks (top 3)**:
 1.
 2.
 3.
 
-**估值快评**：
-- 当前 PE/PS/EV/EBITDA + 历史区间位置
-- 同业对比
-- 一句话结论：贵 / 合理 / 便宜
+**Valuation quick take**:
+- Current P/E / P/S / EV/EBITDA + position within historical range
+- Peer comparison
+- One-line verdict: expensive / fair / cheap
 
-**进入终选 3 家？**：是 / 否（理由）
+**Advance to the final 3?**: Yes / No (reason)
 ```
 
-### 3.2 终选 3 家的选择标准
+### 3.2 Selection Criteria for the Final 3
 
-不是按打分排序选前 3，而是按"投资组合互补性"选：
-- 至少 1 家"高确定性低弹性"（巴菲特型）
-- 至少 1 家"中等确定性中等弹性"（成长型）
-- 可选 1 家"高弹性高风险"（期权型）
+Do not simply rank by score and take the top 3; select by "portfolio complementarity":
+- At least 1 "high-certainty, low-beta" name (Buffett type)
+- At least 1 "medium-certainty, medium-beta" name (growth type)
+- Optionally 1 "high-beta, high-risk" name (option type)
 
-如果某子赛道找不到 3 家足够好的，宁可写"终选 2 家 + 1 家观察"，不要凑数。
+If a given sub-theme cannot yield 3 sufficiently good names, prefer to write "final 2 + 1 on watch" rather than pad the list.
 
 ---
 
-## 第四步：四大师深度分析（3 家，每家 800-1200 字）
+## Step 4: Four-Masters Deep Dive (3 names, 800-1200 words each)
 
-对终选 3 家执行四大师视角深度分析。
+Run a four-masters deep-dive analysis on the final 3.
 
-### 4.1 段永平视角：生意本质
+### 4.1 Duan Yongping View: Business Essence
 
-- 一句话定义这家公司在做什么生意
-- 这是好生意吗？为什么？
-- 它的"本分"是什么？管理层有没有偏离？
-- 商业模式的"持续性"在哪？
+- Define in one sentence what business this company is in
+- Is it a good business? Why?
+- What is its "honest core" (benfen)? Has management drifted from it?
+- Where is the "durability" of the business model?
 
-### 4.2 巴菲特视角：护城河深度
+### 4.2 Buffett View: Moat Depth
 
-- 用五类护城河打分（★1-5），列具体证据
-- 10 年后护城河还在吗？
-- 现在买入的"安全边际"在哪？
+- Score using the five moat types (★1-5), with specific evidence
+- Will the moat still be there in 10 years?
+- Where is the "margin of safety" for buying now?
 
-| 护城河 | 强度 | 具体证据 |
-|-------|------|---------|
-| 品牌/定价权 | | |
-| 转换成本 | | |
-| 网络效应 | | |
-| 规模效应 | | |
-| 技术/牌照壁垒 | | |
+| Moat | Strength | Specific Evidence |
+|------|----------|-------------------|
+| Brand / pricing power | | |
+| Switching costs | | |
+| Network effects | | |
+| Economies of scale | | |
+| Technology / license barriers | | |
 
-### 4.3 芒格视角：风险与失败模式
+### 4.3 Munger View: Risk and Failure Modes
 
-- 这家公司最可能怎么失败？（列出前 3 失败路径）
-- 最坏情景下值多少钱？（极简估值）
-- 聪明人为什么不买？（反向论证）
-- 是否有道德/合规/管理层风险？
+- How is this company most likely to fail? (list the top 3 failure paths)
+- What is it worth in the worst case? (minimalist valuation)
+- Why don't smart people buy it? (inversion)
+- Are there ethical / compliance / management risks?
 
-### 4.4 李录视角：文明级趋势定位
+### 4.4 Li Lu View: Civilizational-Trend Positioning
 
-- 这家公司所在的赛道是"文明级范式转移"还是"阶段性热潮"？
-- 历史上最接近的技术革命类比？
-- 10-20 年后这家公司的终局？
-- 是不是赢家通吃格局？
+- Is this company's arena a "civilization-level paradigm shift" or a "temporary fad"?
+- The closest historical analogy of a technology revolution?
+- What is this company's endgame in 10-20 years?
+- Is it a winner-take-all structure?
 
-### 4.5 综合推荐度
+### 4.5 Overall Recommendation Level
 
 ```
-推荐度：★★★★☆
-仓位类型：核心 / 卫星 / 期权 / 观察
-建议买入区间：当前价 / 回调 N% / 有耐心等待
-建议持仓比例：占该主题仓位 X%
-关键监测指标：（这家公司逻辑一旦反转的信号是什么）
+Recommendation: ★★★★☆
+Position type: core / satellite / option / watch
+Suggested buy range: current price / pullback of N% / wait patiently
+Suggested position size: X% of this theme's allocation
+Key monitoring metric: (what signal would flip this company's thesis)
 ```
 
 ---
 
-## 第五步：综合输出
+## Step 5: Integrated Output
 
-报告末尾整合：
+Consolidate at the end of the report:
 
-### 5.1 终选 3 家组合表
+### 5.1 Final 3 Portfolio Table
 
-| 公司 | 类型 | 推荐度 | 建议仓位 | 核心逻辑 | 关键风险 |
-|------|------|-------|---------|---------|---------|
-| A | 核心 | ★★★★★ | 50-60% | | |
-| B | 卫星 | ★★★★☆ | 25-35% | | |
-| C | 期权 | ★★★☆☆ | 5-15% | | |
+| Company | Type | Recommendation | Suggested Position | Core Logic | Key Risk |
+|---------|------|----------------|--------------------|------------|----------|
+| A | Core | ★★★★★ | 50-60% | | |
+| B | Satellite | ★★★★☆ | 25-35% | | |
+| C | Option | ★★★☆☆ | 5-15% | | |
 
-### 5.2 行业级 ETF 替代
+### 5.2 Industry-Level ETF Alternative
 
-如果不想选股，列 1-3 个相关 ETF（A 股/港股/美股）。
+For those who don't want to pick stocks, list 1-3 relevant ETFs (B3 / Brazil, US).
 
-### 5.3 整体行业位置判断
+### 5.3 Overall Industry Positioning Judgment
 
-- 行业 PE/PB 历史分位
-- 资金流向（北向、ETF 申赎、卖方覆盖密度）
-- 整体处于"早期/扩张/成熟/衰退"哪个阶段
+- Industry P/E / P/B historical percentile
+- Fund flows (foreign flows, ETF creations/redemptions, sell-side coverage density)
+- Whether the industry as a whole is in "early / expansion / mature / decline" stage
 
-### 5.4 信息充分度自评（必填）
+### 5.4 Information-Sufficiency Self-Assessment (required)
 
-| 维度 | 等级 | 说明 |
-|-----|------|-----|
-| 公司财务数据完整性 | A/B/C | |
-| 估值数据时效性 | A/B/C | |
-| 行业格局判断 | A/B/C | |
-| 管理层信息 | A/B/C | |
+| Dimension | Grade | Notes |
+|-----------|-------|-------|
+| Completeness of company financials | A/B/C | |
+| Timeliness of valuation data | A/B/C | |
+| Judgment of industry landscape | A/B/C | |
+| Management information | A/B/C | |
 
-A = 数据充分可信；B = 部分缺失但不影响主结论；C = 缺失较多，结论需谨慎。
+A = data sufficient and reliable; B = partially missing but does not affect the main conclusion; C = substantially missing, conclusion requires caution.
 
-### 5.5 待更新数据点
+### 5.5 Data Points to Update
 
-明确列出：哪些数据是估计值、哪些数据需要后续核实、哪个季度财报需要重点跟踪。
+Explicitly list: which data are estimates, which data need later verification, and which quarter's filings should be tracked closely.
 
-### 5.6 资料来源清单
+### 5.6 Source List
 
-每个数据/结论的来源链接，分类列出（财报、研报、新闻、行业报告）。
-
----
-
-## AI 研究偏见自觉（重要）
-
-漏斗筛选过程中，AI 容易踩的坑：
-
-| 偏见 | 表现 | 应对 |
-|------|-----|------|
-| 龙头偏好 | 大市值公司资料多、分析篇幅长，看起来"更好" | 按硬指标和护城河打分，不按报告篇幅排序 |
-| 英文偏好 | 美股资料丰富，A 股港股容易被低估 | 必须中英文都搜，A/H 公司不能漏 |
-| 故事偏好 | 高涨幅 + 媒体热度 = 看起来更好的"AI 概念股" | 区分"AI 收入占比" vs "AI 故事占比"，看真实业务 |
-| 当下偏好 | 当前财务好的公司容易入选，可能错过转型期黑马 | 第二层粗筛允许"趋势改善"作为放宽条件 |
-| 上市偏好 | 只看上市公司可能错过赛道最好的玩家 | 必须列"未来 IPO 候选"，标注估值与时间窗 |
+The source link for each data point / conclusion, listed by category (filings, research reports, news, industry reports).
 
 ---
 
-## 输出要求
+## AI Research-Bias Awareness (Important)
 
-1. **报告位置**：`reports/{行业名}-funnel-{YYYYMMDD}.md`（行业报告放 reports/ 根目录）
-2. **语言**：中文
-3. **风格**：直接、犀利、不说废话
-4. **数据**：所有数据标注来源；估计值标"估计"
-5. **不预设立场**：先摆数据 → 推逻辑 → 出结论
-6. **正反两面**：每个核心判断附反面论据
-7. **每层留淘汰记录**：被淘汰的公司也要留名字+理由
+Traps AI easily falls into during funnel screening:
+
+| Bias | Manifestation | Countermeasure |
+|------|---------------|----------------|
+| Leader preference | Large-caps have more material and longer analysis, so they look "better" | Score by hard metrics and moat, not by report length |
+| English-language preference | US material is abundant, so Brazilian / B3 names are easily underestimated | Search both Portuguese and English; don't miss B3 / ADR names |
+| Story preference | High price gains + media buzz = a better-looking "AI concept stock" | Distinguish "AI revenue share" vs. "AI story share"; look at the real business |
+| Present-bias | Companies with good current financials are easily selected, possibly missing turnaround dark horses | The Layer-2 coarse screen allows "improving trend" as a relaxation condition |
+| Listed-company preference | Looking only at listed companies may miss the best players in the arena | You must list "future IPO candidates" and flag valuation and timing window |
 
 ---
 
-## 数据抽检（准出流程）
+## Output Requirements
 
-报告写入后，执行数据抽检，通过方可发布：
+1. **Report location**: `reports/{Industry}-funnel-{YYYYMMDD}.md` (industry reports go in the reports/ root; use English / Latin names)
+2. **Language**: English — write the report in English
+3. **Style**: direct, sharp, no filler
+4. **Data**: cite the source of all data; label estimates "estimate"
+5. **No preset stance**: first present data → derive logic → reach conclusion
+6. **Both sides**: attach counter-evidence to every core judgment
+7. **Keep elimination records at each layer**: eliminated companies keep their name + reason
+
+---
+
+## Data Spot-Check (Release Gate)
+
+After the report is written, run a data spot-check; only a pass allows publication:
 
 ```bash
-# Step 1 — 提取抽检清单（15% 随机抽样）
+# Step 1 — Extract the spot-check list (15% random sample)
 python3 tools/report_audit.py extract \
-  --report <报告文件路径>
+  --report <report file path>
 
-# Step 2 — 对清单每项从可靠信源取数（参见 skills/financial-data.md）
+# Step 2 — For each item on the list, pull data from a reliable source (see skills/financial-data.md)
 
-# Step 3 — 输出准出/打回判决
+# Step 3 — Output the pass / reject verdict
 python3 tools/report_audit.py verdict \
-  --results '<填好的JSON>' \
-  --report <报告文件名>
+  --results '<filled-in JSON>' \
+  --report <report file name>
 ```
 
-**【准出】** 全部通过 → 报告可发布；**【打回】** 有不通过 → 修正后重审。
+**[PASS]** All items pass → the report may be published; **[REJECT]** Any item fails → fix and re-review.
 
 ---
 
-## 后续动作
+## Follow-Up Actions
 
-漏斗终选 3 家后，对每家可单独执行：
-- `/investment-team` —— 完整四大师并行深度研究（独立子目录 + 5 文档）
-- `/investment-checklist` —— 巴菲特买入前 checklist 系统过一遍
-- `/management-deep-dive` —— 管理层纵深研究
+After the funnel selects the final 3, you can run the following individually on each:
+- `/investment-team` — full parallel four-masters deep research (independent subdirectory + 5 documents)
+- `/investment-checklist` — run the Buffett pre-buy checklist end to end
+- `/management-deep-dive` — in-depth management research
 
-`industry-funnel` 是入口，后续 skill 是深挖。
+`industry-funnel` is the entry point; the follow-up skills are the deep dig.

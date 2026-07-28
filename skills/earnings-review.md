@@ -1,218 +1,223 @@
-# 财报精读：一手资料深度解读
+# Earnings Review: Deep Reading of Primary Sources
 
-对 $ARGUMENTS 进行财报精读分析。
+Perform a deep earnings review of `$ARGUMENTS`.
 
-**支持输入格式**：`公司名 季度`，例如：`腾讯 2025Q4`、`PDD 2025年报`、`美团 最新`（默认读取最近一期）
+**Supported input formats**: `Company Quarter`, e.g. `Petrobras 2025Q4`, `Vale 2025 Annual Report`, `Itau latest` (defaults to the most recent period).
 
-> "我从不看卖方研报，只读原始财报。" —— 李录
+> "I never read sell-side research; I only read the original filings." — Li Lu
 >
-> "我每天读500页。知识就是这样积累的，像复利一样。" —— 巴菲特
+> "I read 500 pages a day. That's how knowledge builds up, like compound interest." — Warren Buffett
 
-## 设计理念
+## Design Philosophy
 
-大多数AI投研工具依赖二手信息（新闻、研报摘要、数据网站）。但巴菲特和李录的核心能力是**读一手资料**——年报、季报、电话会纪要。
+Most AI investment-research tools rely on secondhand information (news, research-note summaries, data websites). But the core skill of Buffett and Li Lu is **reading primary sources** — annual reports, quarterly reports, and earnings-call transcripts.
 
-二手信息的问题：
-- 被筛选过——分析师选择性呈现对其观点有利的数据
-- 有时滞——等别人消化完，alpha已经没了
-- 缺乏语境——"收入增长15%"脱离了管理层对增长质量的讨论
+Problems with secondhand information:
+- It has been filtered — analysts selectively present the data that supports their view.
+- It lags — by the time others have digested it, the alpha is gone.
+- It lacks context — "revenue grew 15%" is stripped of management's discussion of the quality of that growth.
 
-本Skill直接解读一手资料，关注巴菲特和李录真正会看的内容。
+This Skill reads primary sources directly, focusing on what Buffett and Li Lu actually look at.
 
-## 执行流程
+Default market is Brazil / B3. Default tickers are B3 (e.g. PETR4, VALE3, ITUB4, BBAS3, WEGE3, ABEV3). Currency is BRL (R$); state it explicitly and note USD ADRs where relevant.
 
-### 前置步骤：资料可得性评级
+## Execution Flow
 
-| 等级 | 特征 | 影响 |
-|------|------|------|
-| A级 | 获取到完整原文（10-K/年报/电话会纪要） | 正常执行全部步骤 |
-| B级 | 仅获取到部分原文或第三方汇总 | 标注"非原始来源"，降低附注分析权重 |
-| C级 | 仅有新闻报道和数据网站摘要 | 聚焦核心财务数据变化，跳过附注挖掘，标注"一手资料不足" |
+### Prerequisite: Source Availability Rating
 
-### 第一步：获取一手资料
+| Grade | Characteristics | Impact |
+|-------|-----------------|--------|
+| A | Complete original filing obtained (annual/interim report, earnings-call transcript) | Execute all steps normally |
+| B | Only partial original text or a third-party summary obtained | Flag as "not a primary source"; reduce the weight of footnote analysis |
+| C | Only news reports and data-website summaries available | Focus on core financial-data changes, skip footnote mining, flag as "insufficient primary sources" |
 
-使用 Task 工具启动多个后台 Agent **并行**获取以下原始材料：
+### Step 1: Obtain Primary Sources
 
-1. **财报原文**：从公司IR页面、SEC EDGAR（美股10-K/10-Q）、港交所披露易（港股）、巨潮资讯网（A股）获取
-2. **业绩电话会纪要/录音**：从 Seeking Alpha、公司IR页面、雪球等获取
-3. **管理层致股东信**（如有年报）：完整阅读
-4. **投资者日/分析师日材料**（如近期有）
+Use the Task tool to launch multiple background Agents **in parallel** to obtain the following raw materials:
 
-如果无法获取完整原文，按 `skills/financial-data.md` 规范使用标准数据源拼凑（美股：macrotrends+stockanalysis；港股：aastocks+macrotrends；A股：东方财富+巨潮资讯；台股：FinMind `tools/twstock_data.py`+Goodinfo），但必须标注"非原始财报，来自第三方汇总"，且关键数据两源误差>1%须标记。
+1. **Original filing**: from the company's Investor Relations (RI) site, CVM via the RAD portal (www.rad.cvm.gov.br) for Brazilian issuers, and the SEC (EDGAR) for US-listed ADRs. Market data via B3.
+2. **Earnings-call transcript / recording**: from the company's RI site, earnings-call providers, and reputable financial-news sources.
+3. **Management letter to shareholders** (if an annual report): read in full.
+4. **Investor Day / analyst-day materials** (if recently held).
 
-### 第二步：核心财务数据提取与验证
+The analyst also has MCP market-data tools available (a market-data server plus finnhub) as well as WebSearch/WebFetch; prefer those for pricing, fundamentals, and filings discovery.
 
-#### 2.1 收入与利润表
+If the complete original filing cannot be obtained, follow the `skills/financial-data.md` conventions and assemble the data from standard sources (Brazilian equities: company RI + B3 + CVM disclosures, complemented by reputable financial-data providers; US ADRs: SEC filings + market-data providers). Always flag "not the original filing; assembled from third-party summaries", and mark any key figure whose two sources disagree by more than 1%.
 
-| 指标 | 本期 | 上期 | YoY变化 | 管理层指引 | 是否达标 |
-|------|------|------|---------|-----------|---------|
+### Step 2: Extract and Verify Core Financial Data
 
-必须覆盖：
-- 总收入及分业务/分地区收入拆解
-- 毛利润、毛利率变化
-- 经营利润、经营利润率变化（区分GAAP和Non-GAAP）
-- 净利润（注意非经常性损益的影响）
-- EPS（基本 vs 稀释）
+#### 2.1 Income Statement
 
-#### 2.2 现金流表（巴菲特最看重）
+| Metric | Current | Prior | YoY Change | Management Guidance | On Target? |
+|--------|---------|-------|-----------|---------------------|-----------|
 
-| 指标 | 本期 | 上期 | 变化 | 关注点 |
-|------|------|------|------|--------|
+Must cover:
+- Total revenue plus a breakdown by segment/geography.
+- Gross profit and change in gross margin.
+- Operating profit and change in operating margin (distinguish GAAP/IFRS from non-GAAP/adjusted).
+- Net income (watch for the impact of non-recurring items).
+- EPS (basic vs. diluted).
 
-必须覆盖：
-- 经营性现金流 vs 净利润的比率（>100%为佳，<80%需警惕）
-- 资本开支及其构成（维护性 vs 扩张性）
-- 自由现金流 = 经营现金流 - 资本开支
-- 回购金额、分红金额
-- 现金及等价物期末余额
+#### 2.2 Cash Flow Statement (Buffett's Top Priority)
 
-#### 2.3 资产负债表健康度
+| Metric | Current | Prior | Change | Watch For |
+|--------|---------|-------|--------|-----------|
 
-必须覆盖：
-- 现金+短期投资 vs 有息负债
-- 净现金/净负债变化趋势
-- 应收账款周转天数变化（是否在放松信用条件冲收入？）
-- 存货周转天数变化（是否在积压？）
-- 商誉及无形资产占比（是否有减值风险？）
+Must cover:
+- Operating cash flow vs. net income ratio (>100% is good, <80% warrants caution).
+- Capital expenditure and its composition (maintenance vs. expansion).
+- Free cash flow = operating cash flow − capex.
+- Buybacks and dividends paid.
+- Ending cash and equivalents balance.
 
-**数据验证**：使用 `tools/financial_rigor.py` 对关键数据进行校验：
+#### 2.3 Balance-Sheet Health
+
+Must cover:
+- Cash + short-term investments vs. interest-bearing debt.
+- Trend in net cash / net debt.
+- Change in days sales outstanding (is the company loosening credit terms to pump revenue?).
+- Change in days inventory outstanding (is inventory piling up?).
+- Goodwill and intangibles as a share of assets (any impairment risk?).
+
+**Data verification**: use `tools/financial_rigor.py` to check key figures.
 
 ```bash
-# 收入和净利润交叉验证（至少2个来源）
+# Cross-validate revenue and net income (at least 2 sources)
 python3 tools/financial_rigor.py cross-validate \
-  --metric "revenue" --values 108.3e9 107.9e9 --sources "公司财报" "Yahoo Finance"
+  --metric "revenue" --values 108.3e9 107.9e9 --sources "Company filing" "Market-data provider"
 
-# 市值校验
+# Market-cap check
 python3 tools/financial_rigor.py verify-market-cap \
-  --price 101 --shares 1.488e9 --reported 1.44e11 --currency USD
+  --price 38.5 --shares 12.9e9 --reported 4.97e11 --currency BRL
 
-# 估值指标验算
+# Valuation-metric check
 python3 tools/financial_rigor.py verify-valuation \
-  --price 101 --eps 9.6 --bvps 26.5 --fcf-per-share 10.2
+  --price 38.5 --eps 6.2 --bvps 22.4 --fcf-per-share 5.1
 ```
 
-### 第三步：管理层讨论精读（MD&A）
+### Step 3: Deep Reading of the Management Discussion (MD&A)
 
-这是巴菲特和李录花最多时间的部分。不是看数字，是**听管理层怎么说**。
+This is where Buffett and Li Lu spend the most time. It is not about the numbers — it is about **listening to how management talks**.
 
-#### 3.1 管理层语气分析
+#### 3.1 Management-Tone Analysis
 
-逐段阅读管理层讨论/电话会发言，标注以下信号：
+Read the management discussion / earnings-call remarks paragraph by paragraph, flagging the following signals:
 
-| 信号类型 | 具体表现 | 示例 |
-|---------|---------|------|
-| 🟢 **坦诚信号** | 主动承认问题、给出具体原因 | "本季度利润率下降主要因为我们在X领域的投入超出预期" |
-| 🟢 **清晰信号** | 战略表述具体、有量化目标 | "我们计划在未来12个月将X业务的市场份额从15%提升到20%" |
-| 🔴 **模糊信号** | 大量使用"我们相信"、"长期来看"等没有实质内容的话 | "我们对未来充满信心" |
-| 🔴 **转移信号** | 回避直接问题、用其他话题带过 | 被问利润率时转谈收入增速 |
-| 🔴 **归因外部化** | 把问题全归咎于宏观/行业/竞争对手 | "由于宏观环境影响..." |
+| Signal Type | Manifestation | Example |
+|-------------|---------------|---------|
+| 🟢 **Candor signal** | Proactively admits problems, gives specific reasons | "Margins fell this quarter mainly because our investment in X exceeded plan" |
+| 🟢 **Clarity signal** | Concrete strategy statements with quantified targets | "We plan to raise X's market share from 15% to 20% over the next 12 months" |
+| 🔴 **Vagueness signal** | Heavy use of "we believe", "over the long term", and other content-free phrases | "We are confident about the future" |
+| 🔴 **Deflection signal** | Dodges the direct question, changes the subject | Asked about margins, pivots to revenue growth |
+| 🔴 **Externalizing blame** | Blames everything on macro/industry/competitors | "Owing to the macro environment..." |
 
-#### 3.2 承诺追踪
+#### 3.2 Promise Tracking
 
-从上一期财报/电话会中提取管理层的具体承诺，与本期实际情况对比：
+Extract management's specific commitments from the prior earnings report / call and compare them against actual results this period:
 
-| 上期承诺 | 本期兑现情况 | 评价 |
-|---------|------------|------|
-| "下半年利润率将恢复到X%" | 实际Y% | ✅达标 / ❌未达标 / ⚠️部分达标 |
+| Prior Commitment | Actual This Period | Assessment |
+|------------------|--------------------|------------|
+| "Margins will recover to X% in H2" | Actual Y% | ✅ Met / ❌ Missed / ⚠️ Partially met |
 
-**段永平**："看一个管理层靠不靠谱，最简单的方法就是看他以前说的话做到了没有。"
+**Duan Yongping**: "The simplest way to judge whether a management team is reliable is to check whether they did what they said they would."
 
-#### 3.3 关键问题识别
+#### 3.3 Key-Question Identification
 
-从电话会Q&A环节提取分析师最尖锐的问题，以及管理层的回答质量：
+Extract the sharpest analyst questions from the Q&A and rate the quality of management's answers:
 
-| 分析师问题 | 管理层回答 | 回答质量(1-5) | 是否回避 |
-|-----------|-----------|:------------:|:-------:|
+| Analyst Question | Management Answer | Answer Quality (1-5) | Evasive? |
+|------------------|-------------------|:--------------------:|:--------:|
 
-### 第四步：附注与隐藏信息挖掘
+### Step 4: Mining Footnotes and Hidden Information
 
-财报附注里藏着管理层不想让你轻易看到的信息：
+The footnotes hide information management would rather you not find easily:
 
-#### 4.1 必查附注项
+#### 4.1 Mandatory Footnote Checks
 
-- [ ] **关联交易**：与大股东/关联方的交易条款是否公允？
-- [ ] **股权激励**：期权/RSU的稀释效应有多大？行权价是多少？
-- [ ] **或有负债**：诉讼、担保、承诺等表外风险
-- [ ] **会计政策变更**：是否改变了收入确认方式、折旧年限等？
-- [ ] **分部信息**：不同业务的利润率差异，是否有"好业务补贴坏业务"
-- [ ] **客户/供应商集中度**：前五大客户/供应商占比
+- [ ] **Related-party transactions**: are the terms with major shareholders / affiliates fair?
+- [ ] **Share-based compensation**: how large is the dilution from options/RSUs? What is the strike price?
+- [ ] **Contingent liabilities**: litigation, guarantees, commitments, and other off-balance-sheet risks.
+- [ ] **Accounting-policy changes**: any change to revenue recognition, depreciation lives, etc.?
+- [ ] **Segment information**: margin differences across segments — is a "good business subsidizing a bad one"?
+- [ ] **Customer/supplier concentration**: share of the top five customers/suppliers.
 
-#### 4.2 异常信号检测
+#### 4.2 Anomaly Detection
 
-- [ ] 应收账款增速 > 收入增速（可能在塞渠道）
-- [ ] 存货增速 > 收入增速（可能在积压）
-- [ ] 经营现金流 < 净利润且差距扩大（利润质量存疑）
-- [ ] 资本化开支突然增加（可能在美化利润）
-- [ ] 非经常性收益占比突然上升
+- [ ] Receivables growth > revenue growth (possible channel stuffing).
+- [ ] Inventory growth > revenue growth (possible pile-up).
+- [ ] Operating cash flow < net income with a widening gap (earnings quality in doubt).
+- [ ] Sudden increase in capitalized expenditure (possible earnings dressing).
+- [ ] Sudden rise in the share of non-recurring gains.
 
-### 第五步：与历史数据对比
+### Step 5: Comparison Against Historical Data
 
-#### 5.1 趋势分析
+#### 5.1 Trend Analysis
 
-将本期关键指标放入至少4个季度（或3年年报）的时间序列中：
+Place this period's key metrics into a time series of at least 4 quarters (or 3 years of annual reports):
 
-| 指标 | Q-4 | Q-3 | Q-2 | Q-1 | 本期 | 趋势判断 |
-|------|-----|-----|-----|-----|------|---------|
+| Metric | Q-4 | Q-3 | Q-2 | Q-1 | Current | Trend |
+|--------|-----|-----|-----|-----|---------|-------|
 
-重点关注：
-- 利润率是在改善还是恶化？
-- 收入增速是在加速还是减速？
-- 现金流质量是在提升还是下降？
-- 资本开支强度是在增加还是减少？
+Key focus:
+- Are margins improving or deteriorating?
+- Is revenue growth accelerating or decelerating?
+- Is cash-flow quality rising or falling?
+- Is capex intensity increasing or decreasing?
 
-#### 5.2 与管理层指引对比
+#### 5.2 Comparison Against Management Guidance
 
-| 指标 | 管理层此前指引 | 实际结果 | 偏差 | 解读 |
-|------|--------------|---------|------|------|
+| Metric | Prior Management Guidance | Actual Result | Deviation | Interpretation |
+|--------|---------------------------|---------------|-----------|----------------|
 
-### 第六步：输出精读报告
+### Step 6: Produce the Earnings-Review Report
 
-#### 报告结构
+#### Report Structure
 
 ```
-一、核心数据速览（一页表格）
-二、本期最重要的3个变化（不超过500字）
-三、管理层语气与承诺追踪
-四、附注中的隐藏信息
-五、关键问题（电话会Q&A精选）
-六、与投资论文的关系（如有持仓）
-七、结论：这份财报改变了什么？
+1. Core data at a glance (one-page table)
+2. The 3 most important changes this period (under 500 words)
+3. Management tone and promise tracking
+4. Hidden information in the footnotes
+5. Key questions (selected earnings-call Q&A)
+6. Relationship to the investment thesis (if held)
+7. Conclusion: what did this report change?
 ```
 
-#### 结论必须明确回答
+#### The Conclusion Must Clearly Answer
 
-1. **这份财报是超预期、符合预期、还是低于预期？**（不能说"基本符合"然后列一堆两面话）
-2. **对投资论文的影响**：强化 / 无影响 / 削弱 / 破裂
-3. **需要关注的下一个催化剂是什么？**
-4. **如果你已持有，该加仓/持有/减仓？**
+1. **Was this report a beat, in line, or a miss?** (No hedging "broadly in line" followed by a list of both-sides talking points.)
+2. **Impact on the investment thesis**: reinforces / no impact / weakens / breaks it.
+3. **What is the next catalyst to watch?**
+4. **If you already hold, should you add / hold / trim?**
 
-### 第七步：保存报告
+### Step 7: Save the Report
 
-将报告写入 `reports/{公司名}-earnings-{期间}.md`，例如 `reports/腾讯-earnings-2025Q4.md`
+Write the report to `reports/{Company}/{Company}-earnings-{Period}.md`, e.g. `reports/Petrobras/Petrobras-earnings-2025Q4.md`. Use English/latin folder names.
 
-### 第八步：数据抽检（准出流程）
+### Step 8: Data Spot-Check (Release Gate)
 
-报告写入后，执行数据抽检，通过方可发布：
+After writing the report, run the data spot-check; it must pass before release:
 
 ```bash
-# Step 1 — 提取抽检清单
+# Step 1 — extract the spot-check list
 python3 tools/report_audit.py extract \
-  --report reports/{公司名}-earnings-{期间}.md
+  --report reports/{Company}/{Company}-earnings-{Period}.md
 
-# Step 2 — 对清单每项从可靠信源取数（参见 skills/financial-data.md）
+# Step 2 — for each item, pull the figure from a reliable source (see skills/financial-data.md)
 
-# Step 3 — 输出准出/打回判决
+# Step 3 — output the pass/return verdict
 python3 tools/report_audit.py verdict \
-  --results '<填好的JSON>' \
-  --report {报告文件名}
+  --results '<completed JSON>' \
+  --report {report filename}
 ```
 
-**【准出】** 全部通过 → 发布；**【打回】** 有不通过 → 修正后重审。
+**[PASS]** all items pass → release; **[RETURN]** any item fails → fix and re-audit.
 
-## 关键原则
+## Key Principles
 
-- **读原文，不读摘要**：尽一切可能获取一手资料
-- **看变化，不看绝对值**：趋势比数字本身重要
-- **听语气，不只听内容**：管理层怎么说和说了什么一样重要
-- **查附注，不只看正文**：魔鬼藏在细节里
-- **给结论，不做汇总**：精读的目的是形成判断，不是复述财报
+- **Read the original, not the summary**: obtain primary sources by every means possible.
+- **Watch changes, not absolute levels**: the trend matters more than the number itself.
+- **Listen to the tone, not just the content**: how management says it matters as much as what they say.
+- **Check the footnotes, not just the body**: the devil is in the details.
+- **Deliver a conclusion, not a recap**: the point of a deep read is to form a judgment, not to restate the filing.
+- **Objectivity**: base everything on facts and data; separate fact from opinion; present both sides; cite sources (at least 2 for key data); be honest about uncertainty. All output reports are written in English.

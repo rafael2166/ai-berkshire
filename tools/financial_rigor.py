@@ -8,11 +8,15 @@ Zero external dependencies — uses only Python stdlib (decimal, json, math, arg
 Requires Python >= 3.7.
 
 Usage (called automatically by Skills, no manual execution needed):
-    python3 tools/financial_rigor.py verify-market-cap --price 510 --shares 9.11e9 --reported 4.65e12 --currency HKD
-    python3 tools/financial_rigor.py verify-valuation --price 510 --eps 23.5 --bvps 120 --fcf-per-share 18 --dividend 2.4
-    python3 tools/financial_rigor.py cross-validate --field revenue --values '{"年报": 7518, "Yahoo": 7500, "StockAnalysis": 7520}' --unit 亿
+    python3 tools/financial_rigor.py verify-market-cap --price 38.5 --shares 13.04e9 --reported 502e9 --currency R$
+    python3 tools/financial_rigor.py verify-valuation --price 38.5 --eps 4.53 --bvps 22.0 --fcf-per-share 6.1 --dividend 3.2
+    python3 tools/financial_rigor.py cross-validate --field revenue --values '{"AnnualReport": 512.3, "Yahoo": 511.0, "StockAnalysis": 513.1}' --unit B
     python3 tools/financial_rigor.py benford --values '[1234, 2345, 3456, ...]'
-    python3 tools/financial_rigor.py calc --expr '510 * 9.11e9'
+    python3 tools/financial_rigor.py calc --expr '38.5 * 13.04e9'
+
+    Magnitude units follow the international convention: M (million, 1e6),
+    B (billion, 1e9), T (trillion, 1e12). Currencies: R$ (BRL), US$ / $ (USD).
+    Examples use B3 tickers such as PETR4 (Petrobras) and VALE3 (Vale).
 """
 
 import argparse
@@ -37,28 +41,44 @@ def exact(value) -> Decimal:
     return Decimal(str(value))
 
 
+# Magnitude units and how they roll up: a value expressed in millions that
+# reaches 1000 is better shown in billions; billions that reach 1000 in trillions.
+_MAG_UNITS = {"M": 1e6, "B": 1e9, "T": 1e12}
+_MAG_ROLLUP = {"M": "B", "B": "T"}
+
+
 def fmt_number(d: Decimal, unit: str = "") -> str:
-    """Format large numbers in human-readable form (亿/万亿/B/T)."""
+    """Format numbers in human-readable form (M / B / T).
+
+    If `unit` is one of M / B / T the value is assumed to already be expressed in
+    that magnitude and is rolled up sensibly (e.g. 1500 in M -> 1.50 B). Otherwise
+    the raw absolute value is scaled down (1e6 -> M, 1e9 -> B, 1e12 -> T).
+    Currency is printed by the caller (R$ / US$), so this stays currency-agnostic.
+    """
     v = float(d)
     abs_v = abs(v)
-    if unit in ("亿", "亿元", "亿港元", "亿美元"):
-        if abs_v >= 10000:
-            return f"{v/10000:.2f}万亿{unit[1:] if len(unit) > 1 else ''}"
-        return f"{v:.2f}{unit}"
+    if unit in _MAG_UNITS:
+        u = unit
+        while u in _MAG_ROLLUP and abs_v >= 1000:
+            v /= 1000
+            abs_v = abs(v)
+            u = _MAG_ROLLUP[u]
+        return f"{v:.2f} {u}"
     if abs_v >= 1e12:
-        return f"{v/1e12:.2f}T"
+        return f"{v/1e12:.2f} T"
     if abs_v >= 1e9:
-        return f"{v/1e9:.2f}B"
+        return f"{v/1e9:.2f} B"
     if abs_v >= 1e6:
-        return f"{v/1e6:.2f}M"
+        return f"{v/1e6:.2f} M"
     return f"{v:,.2f}"
 
 
 def _force_utf8_stdio():
-    """把 stdout/stderr 强制切到 UTF-8。
+    """Force stdout/stderr to UTF-8.
 
-    Windows 控制台默认 GBK，本工具输出的 ❌ / ⚠️ / ✅ 会抛 UnicodeEncodeError，
-    导致「偏差超标」这条最该被看到的告警路径反而直接崩溃退出。
+    The Windows console defaults to GBK, so the ❌ / ⚠️ / ✅ characters this tool
+    prints raise UnicodeEncodeError, which crashes the very "deviation exceeded"
+    warning path that most needs to be seen.
     """
     for stream in (sys.stdout, sys.stderr):
         try:
@@ -68,7 +88,7 @@ def _force_utf8_stdio():
 
 
 # ---------------------------------------------------------------------------
-# 1. Market Cap Verification (股价×总股本 vs 报告市值)
+# 1. Market Cap Verification (price × shares outstanding vs reported market cap)
 # ---------------------------------------------------------------------------
 
 def verify_market_cap(price, shares, reported_cap, currency=""):
@@ -81,31 +101,31 @@ def verify_market_cap(price, shares, reported_cap, currency=""):
     deviation = abs(float(calculated - r) / float(r)) * 100 if r != 0 else 0
 
     print("=" * 60)
-    print("市值验算 (Market Cap Verification)")
+    print("Market Cap Verification")
     print("=" * 60)
-    print(f"  股价 (Price):       {p} {currency}")
-    print(f"  总股本 (Shares):    {fmt_number(s)}")
-    print(f"  计算市值:           {fmt_number(calculated)} {currency}")
-    print(f"  报告市值:           {fmt_number(r)} {currency}")
-    print(f"  偏差:               {deviation:.2f}%")
+    print(f"  Price:              {p} {currency}")
+    print(f"  Shares:             {fmt_number(s)}")
+    print(f"  Calculated cap:     {fmt_number(calculated)} {currency}")
+    print(f"  Reported cap:       {fmt_number(r)} {currency}")
+    print(f"  Deviation:          {deviation:.2f}%")
     print()
 
     if deviation > 5:
-        print(f"  ❌ 警告: 偏差 {deviation:.1f}% > 5%, 请检查:")
-        print(f"     - 股本是否为最新（回购/增发）?")
-        print(f"     - 单位是否一致（港币 vs 人民币 vs 美元）?")
-        print(f"     - 股价是否为最新?")
+        print(f"  ❌ Warning: deviation {deviation:.1f}% > 5%, please check:")
+        print(f"     - Are shares outstanding current (buybacks/issuance)?")
+        print(f"     - Are the units consistent (R$ / BRL vs US$ / USD)?")
+        print(f"     - Is the share price current?")
         return False
     elif deviation > 1:
-        print(f"  ⚠️  偏差 {deviation:.1f}% 在可接受范围, 可能因股价波动/股本变化")
+        print(f"  ⚠️  Deviation {deviation:.1f}% is within acceptable range, likely due to price/share-count changes")
         return True
     else:
-        print(f"  ✅ 验证通过, 偏差仅 {deviation:.2f}%")
+        print(f"  ✅ Verification passed, deviation only {deviation:.2f}%")
         return True
 
 
 # ---------------------------------------------------------------------------
-# 2. Valuation Metrics Verification (估值指标验算)
+# 2. Valuation Metrics Verification
 # ---------------------------------------------------------------------------
 
 def verify_valuation(price, eps=None, bvps=None, fcf_per_share=None,
@@ -114,9 +134,9 @@ def verify_valuation(price, eps=None, bvps=None, fcf_per_share=None,
     p = exact(price)
 
     print("=" * 60)
-    print("估值指标验算 (Valuation Verification)")
+    print("Valuation Verification")
     print("=" * 60)
-    print(f"  当前股价: {p}")
+    print(f"  Current price: {p}")
     print()
 
     results = {}
@@ -129,9 +149,9 @@ def verify_valuation(price, eps=None, bvps=None, fcf_per_share=None,
             results["PE"] = float(pe)
             # Earnings yield
             ey = _CTX.divide(e, p) * 100
-            print(f"  盈利收益率: {ey:.2f}%")
+            print(f"  Earnings yield: {ey:.2f}%")
         else:
-            print(f"  PE: EPS为0, 无法计算")
+            print(f"  PE: EPS is 0, cannot compute")
 
     if bvps is not None:
         b = exact(bvps)
@@ -158,7 +178,7 @@ def verify_valuation(price, eps=None, bvps=None, fcf_per_share=None,
         d = exact(dividend)
         if p != 0:
             div_yield = _CTX.divide(d, p) * 100
-            print(f"  股息率:    {d} / {p} = {div_yield:.2f}%")
+            print(f"  Div yield: {d} / {p} = {div_yield:.2f}%")
             results["Dividend_Yield"] = float(div_yield)
 
     if revenue_per_share is not None:
@@ -169,18 +189,18 @@ def verify_valuation(price, eps=None, bvps=None, fcf_per_share=None,
             results["PS"] = float(ps)
 
     print()
-    print("  ✅ 以上指标均使用精确十进制计算, 无浮点误差")
+    print("  ✅ All metrics above use exact decimal arithmetic, no floating-point error")
     return results
 
 
 # ---------------------------------------------------------------------------
-# 3. Cross-Source Data Validation (多源交叉验证)
+# 3. Cross-Source Data Validation
 # ---------------------------------------------------------------------------
 
 def cross_validate(field_name, source_values: dict, unit="", tolerance_pct=2.0):
     """Compare a data point across multiple sources, flag discrepancies."""
     print("=" * 60)
-    print(f"交叉验证: {field_name} (Cross-Validation)")
+    print(f"Cross-Validation: {field_name}")
     print("=" * 60)
 
     values = {k: exact(v) for k, v in source_values.items()}
@@ -192,8 +212,8 @@ def cross_validate(field_name, source_values: dict, unit="", tolerance_pct=2.0):
     n = len(sorted_vals)
     median = sorted_vals[n // 2] if n % 2 == 1 else (sorted_vals[n//2-1] + sorted_vals[n//2]) / 2
 
-    print(f"  数据来源数: {len(sources)}")
-    print(f"  参考中位数: {fmt_number(exact(median))} {unit}")
+    print(f"  Number of sources: {len(sources)}")
+    print(f"  Reference median:  {fmt_number(exact(median))} {unit}")
     print()
 
     all_ok = True
@@ -202,23 +222,23 @@ def cross_validate(field_name, source_values: dict, unit="", tolerance_pct=2.0):
         status = "✅" if dev <= tolerance_pct else "❌"
         if dev > tolerance_pct:
             all_ok = False
-        print(f"  {status} {src:20s}: {fmt_number(val)} {unit}  (偏差 {dev:.2f}%)")
+        print(f"  {status} {src:20s}: {fmt_number(val)} {unit}  (deviation {dev:.2f}%)")
 
     print()
     if all_ok:
-        print(f"  ✅ 所有来源偏差 ≤ {tolerance_pct}%, 数据一致")
+        print(f"  ✅ All sources deviate ≤ {tolerance_pct}%, data is consistent")
     else:
-        print(f"  ⚠️  存在来源偏差 > {tolerance_pct}%, 请核实差异原因")
-        print(f"     建议: 优先采用公司年报/交易所数据")
+        print(f"  ⚠️  Some sources deviate > {tolerance_pct}%, please verify the cause")
+        print(f"     Suggestion: prefer company annual reports / exchange data")
 
     # Consensus value
     consensus = median
-    print(f"\n  共识值 (加权中位数): {fmt_number(exact(consensus))} {unit}")
+    print(f"\n  Consensus value (weighted median): {fmt_number(exact(consensus))} {unit}")
     return {"consensus": consensus, "all_consistent": all_ok}
 
 
 # ---------------------------------------------------------------------------
-# 4. Benford's Law Quick Check (财务数据造假检测)
+# 4. Benford's Law Quick Check (financial-data fabrication detection)
 # ---------------------------------------------------------------------------
 
 _BENFORD = {d: math.log10(1 + 1/d) for d in range(1, 10)}
@@ -227,7 +247,7 @@ _BENFORD = {d: math.log10(1 + 1/d) for d in range(1, 10)}
 def benford_check(values: list):
     """Quick Benford's Law check on a list of financial values."""
     print("=" * 60)
-    print("Benford定律检测 (Financial Data Fabrication Check)")
+    print("Benford's Law Check (Financial Data Fabrication Check)")
     print("=" * 60)
 
     # Extract leading digits
@@ -242,7 +262,7 @@ def benford_check(values: list):
 
     n = len(digits)
     if n < 50:
-        print(f"  ⚠️  样本量不足: {n} < 50, Benford分析不可靠")
+        print(f"  ⚠️  Insufficient sample size: {n} < 50, Benford analysis is unreliable")
         return None
 
     # Observed distribution
@@ -259,22 +279,22 @@ def benford_check(values: list):
 
     # Conformity
     if mad < 0.006:
-        conformity = "Close (高度符合)"
+        conformity = "Close (high conformity)"
     elif mad < 0.012:
-        conformity = "Acceptable (可接受)"
+        conformity = "Acceptable"
     elif mad < 0.015:
-        conformity = "Marginally Acceptable (边缘)"
+        conformity = "Marginally Acceptable"
     else:
-        conformity = "Nonconforming (不符合 ⚠️)"
+        conformity = "Nonconforming ⚠️"
 
-    print(f"  样本量:    {n}")
-    print(f"  MAD:       {mad:.6f}")
-    print(f"  Chi-sq:    {chi2:.2f}")
-    print(f"  符合度:    {conformity}")
+    print(f"  Sample size: {n}")
+    print(f"  MAD:         {mad:.6f}")
+    print(f"  Chi-sq:      {chi2:.2f}")
+    print(f"  Conformity:  {conformity}")
     print()
 
     # Digit distribution table
-    print(f"  {'首位数':>6} {'观测':>8} {'Benford期望':>12} {'偏差':>8}")
+    print(f"  {'Digit':>6} {'Observed':>8} {'Benford exp.':>12} {'Dev':>8}")
     print(f"  {'-'*6} {'-'*8} {'-'*12} {'-'*8}")
     for d in range(1, 10):
         obs = observed.get(d, 0)
@@ -286,16 +306,16 @@ def benford_check(values: list):
     print()
     is_ok = mad < 0.015
     if is_ok:
-        print("  ✅ 数据首位数字分布符合Benford定律")
+        print("  ✅ Leading-digit distribution conforms to Benford's Law")
     else:
-        print("  ❌ 数据首位数字分布异常, 可能存在人为调整")
-        print("     提示: 不符合Benford定律不一定是造假, 但值得进一步调查")
+        print("  ❌ Leading-digit distribution is abnormal, may indicate manual adjustment")
+        print("     Note: non-conformity with Benford's Law is not necessarily fabrication, but warrants further investigation")
 
     return {"mad": mad, "chi2": chi2, "conformity": conformity, "is_conforming": is_ok}
 
 
 # ---------------------------------------------------------------------------
-# 5. Exact Calculator (精确计算器)
+# 5. Exact Calculator
 # ---------------------------------------------------------------------------
 
 def exact_calc(expr: str):
@@ -304,30 +324,30 @@ def exact_calc(expr: str):
     Supports: +, -, *, /, (), numbers (including scientific notation).
     """
     print("=" * 60)
-    print("精确计算 (Exact Calculator)")
+    print("Exact Calculator")
     print("=" * 60)
 
     # Safe evaluation: only allow numbers and arithmetic
     allowed = set("0123456789.+-*/() eE")
     if not all(c in allowed for c in expr.replace(" ", "")):
-        print(f"  ❌ 不安全的表达式: {expr}")
+        print(f"  ❌ Unsafe expression: {expr}")
         return None
 
     try:
         # Replace scientific notation for Decimal compatibility
         result = eval(expr, {"__builtins__": {}}, {})
         d_result = exact(result)
-        print(f"  表达式: {expr}")
-        print(f"  结果:   {fmt_number(d_result)}")
-        print(f"  精确值: {d_result}")
+        print(f"  Expression: {expr}")
+        print(f"  Result:     {fmt_number(d_result)}")
+        print(f"  Exact value: {d_result}")
         return float(d_result)
     except Exception as e:
-        print(f"  ❌ 计算错误: {e}")
+        print(f"  ❌ Calculation error: {e}")
         return None
 
 
 # ---------------------------------------------------------------------------
-# 6. Three-Scenario Valuation (三情景估值)
+# 6. Three-Scenario Valuation
 # ---------------------------------------------------------------------------
 
 def three_scenario_valuation(current_price, current_eps, shares_billion,
@@ -336,7 +356,7 @@ def three_scenario_valuation(current_price, current_eps, shares_billion,
                              years=3, currency=""):
     """Calculate three-scenario target prices with exact arithmetic."""
     print("=" * 60)
-    print("三情景估值模型 (Three-Scenario Valuation)")
+    print("Three-Scenario Valuation Model")
     print("=" * 60)
 
     p = exact(current_price)
@@ -344,16 +364,16 @@ def three_scenario_valuation(current_price, current_eps, shares_billion,
     shares = exact(shares_billion)
 
     scenarios = [
-        ("乐观 (Bull)", growth_optimistic, pe_optimistic),
-        ("中性 (Base)", growth_neutral, pe_neutral),
-        ("悲观 (Bear)", growth_pessimistic, pe_pessimistic),
+        ("Bull", growth_optimistic, pe_optimistic),
+        ("Base", growth_neutral, pe_neutral),
+        ("Bear", growth_pessimistic, pe_pessimistic),
     ]
 
-    print(f"  当前股价: {p} {currency}")
-    print(f"  当前EPS:  {eps}")
-    print(f"  预测期:   {years}年")
+    print(f"  Current price: {p} {currency}")
+    print(f"  Current EPS:   {eps}")
+    print(f"  Forecast horizon: {years} years")
     print()
-    print(f"  {'情景':12} {'年增速':>8} {'目标PE':>8} {'目标EPS':>10} {'目标股价':>10} {'涨跌幅':>8}")
+    print(f"  {'Scenario':12} {'Growth':>8} {'Target PE':>8} {'Target EPS':>10} {'Target Px':>10} {'Change':>8}")
     print(f"  {'-'*12} {'-'*8} {'-'*8} {'-'*10} {'-'*10} {'-'*8}")
 
     for name, growth, pe in scenarios:
@@ -370,7 +390,7 @@ def three_scenario_valuation(current_price, current_eps, shares_billion,
               f"{float(future_eps):>10.2f} {float(target_price):>9.1f} {change:>+7.1f}%")
 
     print()
-    print("  ✅ 所有计算使用精确十进制, 结果可审计复现")
+    print("  ✅ All calculations use exact decimal arithmetic, results are auditable and reproducible")
 
 
 # ---------------------------------------------------------------------------
@@ -379,59 +399,60 @@ def three_scenario_valuation(current_price, current_eps, shares_billion,
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Financial Rigor Toolkit — 金融数据严谨性验证工具",
+        description="Financial Rigor Toolkit — financial-data rigor verification tool",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Examples:
-  %(prog)s verify-market-cap --price 510 --shares 9.11e9 --reported 4.65e12 --currency HKD
-  %(prog)s verify-valuation --price 510 --eps 23.5 --bvps 120
-  %(prog)s cross-validate --field revenue --values '{"年报": 7518, "Yahoo": 7500}' --unit 亿
+Examples (B3 tickers, R$ = BRL, US$ = USD; magnitude units M / B / T):
+  %(prog)s verify-market-cap --price 38.5 --shares 13.04e9 --reported 502e9 --currency R$   # PETR4
+  %(prog)s verify-valuation --price 38.5 --eps 4.53 --bvps 22.0
+  %(prog)s cross-validate --field revenue --values '{"AnnualReport": 512.3, "Yahoo": 511.0}' --unit B
   %(prog)s benford --values '[1234, 2345, 3456, ...]'
-  %(prog)s calc --expr '510 * 9.11e9'
+  %(prog)s calc --expr '38.5 * 13.04e9'
         """)
 
     sub = parser.add_subparsers(dest="command")
 
     # verify-market-cap
-    mc = sub.add_parser("verify-market-cap", help="验算市值 = 股价 × 总股本")
+    mc = sub.add_parser("verify-market-cap", help="Verify market cap = price × shares outstanding")
     mc.add_argument("--price", type=float, required=True)
-    mc.add_argument("--shares", type=float, required=True, help="总股本")
-    mc.add_argument("--reported", type=float, required=True, help="报告市值")
-    mc.add_argument("--currency", default="", help="币种")
+    mc.add_argument("--shares", type=float, required=True, help="Shares outstanding")
+    mc.add_argument("--reported", type=float, required=True, help="Reported market cap")
+    mc.add_argument("--currency", default="", help="Currency (e.g. R$ for BRL, US$ for USD)")
 
     # verify-valuation
-    val = sub.add_parser("verify-valuation", help="验算估值指标")
+    val = sub.add_parser("verify-valuation", help="Verify valuation metrics")
     val.add_argument("--price", type=float, required=True)
     val.add_argument("--eps", type=float, default=None)
-    val.add_argument("--bvps", type=float, default=None, help="每股净资产")
+    val.add_argument("--bvps", type=float, default=None, help="Book value per share")
     val.add_argument("--fcf-per-share", type=float, default=None)
-    val.add_argument("--dividend", type=float, default=None, help="每股股息")
+    val.add_argument("--dividend", type=float, default=None, help="Dividend per share")
     val.add_argument("--revenue-per-share", type=float, default=None)
 
     # cross-validate
-    cv = sub.add_parser("cross-validate", help="多源交叉验证")
-    cv.add_argument("--field", required=True, help="数据字段名")
-    cv.add_argument("--values", required=True, help="JSON: {来源: 数值}")
-    cv.add_argument("--unit", default="")
-    cv.add_argument("--tolerance", type=float, default=2.0, help="容差百分比")
+    cv = sub.add_parser("cross-validate", help="Cross-validate across multiple sources")
+    cv.add_argument("--field", required=True, help="Data field name")
+    cv.add_argument("--values", required=True, help="JSON: {source: value}")
+    cv.add_argument("--unit", default="B", choices=["M", "B", "T", ""],
+                    help="Magnitude unit for display: M / B / T (default: B)")
+    cv.add_argument("--tolerance", type=float, default=2.0, help="Tolerance percentage")
 
     # benford
-    bf = sub.add_parser("benford", help="Benford定律检测")
-    bf.add_argument("--values", required=True, help="JSON数组")
+    bf = sub.add_parser("benford", help="Benford's Law check")
+    bf.add_argument("--values", required=True, help="JSON array")
 
     # calc
-    ca = sub.add_parser("calc", help="精确计算")
-    ca.add_argument("--expr", required=True, help="算术表达式")
+    ca = sub.add_parser("calc", help="Exact calculation")
+    ca.add_argument("--expr", required=True, help="Arithmetic expression")
 
     # three-scenario
-    ts = sub.add_parser("three-scenario", help="三情景估值")
+    ts = sub.add_parser("three-scenario", help="Three-scenario valuation")
     ts.add_argument("--price", type=float, required=True)
     ts.add_argument("--eps", type=float, required=True)
-    ts.add_argument("--shares", type=float, required=True, help="总股本(亿)")
+    ts.add_argument("--shares", type=float, required=True, help="Shares outstanding (in billions)")
     ts.add_argument("--growth", nargs=3, type=float, required=True,
-                    help="三情景年增速 (乐观 中性 悲观), 如 0.15 0.08 0.0")
+                    help="Three-scenario annual growth (bull base bear), e.g. 0.15 0.08 0.0")
     ts.add_argument("--pe", nargs=3, type=float, required=True,
-                    help="三情景目标PE, 如 25 20 15")
+                    help="Three-scenario target PE, e.g. 25 20 15")
     ts.add_argument("--years", type=int, default=3)
     ts.add_argument("--currency", default="")
 
